@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use std::{io::ErrorKind, sync::Arc};
+use std::{env, io::ErrorKind, sync::Arc};
 
 use cors::CORS;
 use db::{AffectedRows, Item, DB};
@@ -161,7 +161,7 @@ async fn consume_items(data: Json<Vec<RestockItem>>, db: &State<DB>) -> Result<J
 
 #[launch]
 async fn rocket() -> _ {
-    let ds = Arc::new(Datastore::new("file://testing.db").await.unwrap());
+    let ds = Arc::new(Datastore::new("file://inventory.db").await.unwrap());
     // let ds = Arc::new(Datastore::new("memory").await.unwrap());
     let mut sesh = Session::default();
 
@@ -169,6 +169,10 @@ async fn rocket() -> _ {
     sesh.db = Some("my_bd".to_owned());
 
     let db = DB {ds, sesh};
+
+    env::set_var("ROCKET_ADDRESS", "192.168.1.229");
+    env::set_var("ROCKET_PORT", "26530");
+    env::set_var("ROCKET_LOG_LEVEL", "off");
 
     rocket::build()
         .mount(

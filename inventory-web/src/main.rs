@@ -15,8 +15,8 @@ pub type InvCont = Rc<InventoryController>;
 
 #[derive(Default, PartialEq, Clone)]
 pub enum Tabs {
-    Home,
     #[default]
+    Home,
     DinnerList,
     GroceryBag,
     ShoppingList,
