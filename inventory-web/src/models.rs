@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Item {
     pub id: String,
     pub name: String,
@@ -22,6 +22,10 @@ pub struct Item {
         ", self.id, self.name, self.category, self.stock, self.desired_stock, self.last_updated.to_string());
         result += "}";
         result
+    }
+} impl PartialEq for Item {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id && self.name == other.name && self.category == other.category && self.stock == other.stock && self.desired_stock == other.desired_stock && self.last_updated == other.last_updated
     }
 }
 

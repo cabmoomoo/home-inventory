@@ -10,11 +10,6 @@ pub enum DinnerListMsg {
     Submit
 }
 
-#[derive(Properties, PartialEq)]
-pub struct DinnerListProps {
-    pub controller: InvCont
-}
-
 pub struct Dinnerlist {
     list_items: Vec<AttrValue>,
     item_nodes: BTreeMap<AttrValue, NodeRef>
@@ -23,15 +18,14 @@ pub struct Dinnerlist {
 impl Component for Dinnerlist {
     type Message = DinnerListMsg;
 
-    type Properties = DinnerListProps;
+    type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
         Self { list_items: vec![], item_nodes: BTreeMap::new() }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let props = ctx.props();
-        let controller = &props.controller;
+        let (controller, _) = ctx.link().context::<InvCont>(Callback::noop()).expect("no ctx found");
         let inventory = &controller.state.inventory;
 
         match msg {
@@ -71,8 +65,8 @@ impl Component for Dinnerlist {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let props = ctx.props();
-        let inventory = &props.controller.state.inventory;
+        let (controller, _) = ctx.link().context::<InvCont>(Callback::noop()).expect("no ctx found");
+        let inventory = &controller.state.inventory;
         let id_map = &inventory.item_id_map;
 
         let mut item_list: Vec<Html> = vec![];
@@ -88,7 +82,7 @@ impl Component for Dinnerlist {
 
         html!(<div id="dinner-list" class="item-stock-tab">
         <div class="container">
-            <ItemSearch controller={props.controller.clone()} selection_callback={ctx.link().callback(DinnerListMsg::AddItem)}/>
+            <ItemSearch controller={controller.clone()} selection_callback={ctx.link().callback(DinnerListMsg::AddItem)}/>
             <table>
                 {for item_list}
             </table>

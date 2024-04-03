@@ -2,13 +2,13 @@ use reqwasm::{http::Request, Error};
 
 use crate::models::*;
 
-const BASE_URL: &str = "http://192.168.1.229:26530";
+// const BASE_URL: &str = "http://192.168.1.229:26530";
+const BASE_URL: &str = "http://127.0.0.1:26530";
 
 pub async fn fetch_items() -> Result<Vec<Item>, Error> {
     Request::get(&format!("{BASE_URL}/items"))
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -19,8 +19,7 @@ pub async fn new_item(name: &str, category: &str) -> Result<Item, Error> {
         // .body(vec![name, category])
         .header("Content-Type", "application/json")
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -30,8 +29,7 @@ pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock
         .body(format!("[\"{category}\", \"{stock}\", \"{desired_stock}\"]"))
         .header("Content-Type", "application/json")
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -41,8 +39,7 @@ pub async fn change_item(id: &str, item: Item) -> Result<Item, Error> {
         .body(item.to_json())
         .header("Content-Type", "application/json")
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -50,8 +47,7 @@ pub async fn change_item(id: &str, item: Item) -> Result<Item, Error> {
 pub async fn delete_item(id: &str) -> Result<AffectedRows, Error> {
     Request::delete(&format!("{BASE_URL}/item/{id}"))
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -61,8 +57,7 @@ pub async fn restock_items(items: Vec<RestockItem>) -> Result<AffectedRows, Erro
         .body(restock_items_to_json(items))
         .header("Content-Type", "application/json")
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }
@@ -72,8 +67,7 @@ pub async fn consume_items(items: Vec<RestockItem>) -> Result<AffectedRows, Erro
         .body(restock_items_to_json(items))
         .header("Content-Type", "application/json")
         .send()
-        .await
-        .unwrap()
+        .await?
         .json()
         .await
 }

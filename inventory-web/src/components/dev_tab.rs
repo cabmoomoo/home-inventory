@@ -3,18 +3,13 @@ use std::collections::BTreeMap;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::{models::Item, InvCont};
+use crate::{error_message, models::Item, InvCont};
 
 pub enum DevTabMsg {
     AddItem,
     AddFullItem,
     ChangeItem,
     DeleteItem
-}
-
-#[derive(Properties, PartialEq)]
-pub struct DevTabProps {
-    pub controller: InvCont
 }
 
 pub struct DevTab {
@@ -24,7 +19,7 @@ pub struct DevTab {
 impl Component for DevTab {
     type Message = DevTabMsg;
 
-    type Properties = DevTabProps;
+    type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
         let mut input_nodes = BTreeMap::new();
@@ -36,19 +31,27 @@ impl Component for DevTab {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let props = ctx.props();
-        let cont = &props.controller;
-        let inventory = &props.controller.state.inventory;
+        let (controller, _) = ctx.link().context::<InvCont>(Callback::noop()).expect("no ctx found");
+        let inventory = &controller.state.inventory;
+        let message = controller.message.clone();
 
         let clear_inputs;
         match msg {
             DevTabMsg::AddItem => {
                 let name = self.input_nodes["name"].cast::<HtmlInputElement>().unwrap().value();
                 let category = self.input_nodes["category"].cast::<HtmlInputElement>().unwrap().value();
-                if name.is_empty() || category.is_empty() {
+                if name.is_empty() {
                     return false;
                 }
-                cont.new_item(name, category);
+                if category.is_empty() {
+                    message.dispatch(error_message("A category is required for adding an item".into()));
+                    return false;
+                }
+                if inventory.name_to_id.contains_key(&AttrValue::from(name.clone())) {
+                    message.dispatch(error_message("An item with that name already exists".into()));
+                    return false;
+                }
+                controller.new_item(name, category);
                 clear_inputs = true;
             },
             DevTabMsg::AddFullItem => {
@@ -56,10 +59,18 @@ impl Component for DevTab {
                 let category = self.input_nodes["category"].cast::<HtmlInputElement>().unwrap().value();
                 let stock = self.input_nodes["stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
                 let desired_stock = self.input_nodes["desired stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
-                if name.is_empty() || category.is_empty() {
+                if name.is_empty() {
                     return false;
                 }
-                cont.add_full_item(name, category, stock, desired_stock);
+                if category.is_empty() {
+                    message.dispatch(error_message("A category is required for adding an item".into()));
+                    return false;
+                }
+                if inventory.name_to_id.contains_key(&AttrValue::from(name.clone())) {
+                    message.dispatch(error_message("An item with that name already exists".into()));
+                    return false;
+                }
+                controller.add_full_item(name, category, stock, desired_stock);
                 clear_inputs = true;
             },
             DevTabMsg::ChangeItem => {
@@ -67,14 +78,21 @@ impl Component for DevTab {
                 let category = self.input_nodes["category"].cast::<HtmlInputElement>().unwrap().value();
                 let stock = self.input_nodes["stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
                 let desired_stock = self.input_nodes["desired stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
-                if name.is_empty() || category.is_empty() {
+                if name.is_empty() {
+                    return false;
+                }
+                if category.is_empty() {
+                    message.dispatch(error_message("A category is required for all items".into()));
                     return false;
                 }
                 let item_id;
                 let id_fetch = &inventory.name_to_id.get(&AttrValue::from(name.clone()));
                 match id_fetch {
                     Some(s) => item_id = *s,
-                    None => return false,
+                    None => {
+                        message.dispatch(error_message(format!("Could not find an item with name {}", name)));
+                        return false;
+                    },
                 }
                 let original = &inventory.item_id_map[item_id];
                 let item = Item {
@@ -85,7 +103,7 @@ impl Component for DevTab {
                     desired_stock,
                     last_updated: original.last_updated.clone(),
                 };
-                cont.change_item(item_id.to_string(), item);
+                controller.change_item(item_id.to_string(), item);
                 clear_inputs = true;
             },
             DevTabMsg::DeleteItem => {
@@ -93,10 +111,13 @@ impl Component for DevTab {
                 let id_fetch = inventory.name_to_id.get(&AttrValue::from(name.clone()));
                 let id;
                 match id_fetch {
-                    None => return false,
+                    None => {
+                        message.dispatch(error_message(format!("Could not find an item with name {}", name)));
+                        return false;
+                    },
                     Some(i) => id = i.clone()
                 }
-                cont.delete_item(id.to_string());
+                controller.delete_item(id.to_string());
                 clear_inputs = true;
             },
         }

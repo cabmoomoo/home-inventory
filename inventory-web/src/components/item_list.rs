@@ -4,14 +4,10 @@ use yew::prelude::*;
 
 use crate::{models::Item, InvCont, ItemCategory};
 
-#[derive(Properties, PartialEq)]
-pub struct ItemListProps {
-    pub controller: InvCont
-}
-
 #[function_component]
-pub fn ItemList(props: &ItemListProps) -> Html {
-    let items = &props.controller.state.items;
+pub fn ItemList() -> Html {
+    let inv_cont = use_context::<InvCont>().expect("no ctx found");
+    let items = &inv_cont.state.items;
     let mut category_map: BTreeMap<String, Vec<Item>> = BTreeMap::new();
     for item in items {
         let cat_fetch = category_map.get_mut(&item.category);
@@ -20,16 +16,23 @@ pub fn ItemList(props: &ItemListProps) -> Html {
             None => {category_map.insert(item.category.clone(), vec![item.clone()]);},
         }
     }
-    let categories: Vec<Html> = category_map
-        .iter()
-        .map(|(name, items)| html!(<ItemCategory name={name.clone()} items={items.clone()} />))
-        .collect();
+    // let categories: Vec<Html> = category_map
+    //     .iter()
+    //     .map(|(name, items)| html!(<ItemCategory name={name.clone()} items={items.clone()} />))
+    //     .collect();
+
+    let mut categories: Vec<Html> = vec![];
+    for (name, cat_items) in &category_map {
+        categories.push(html!(
+            <ItemCategory name={name.clone()} items={cat_items.clone()} />
+        ));
+    }
 
     let mut rows: Vec<Html> = vec![];
     let mut row: Vec<Html> = vec![];
     for i in 0..categories.len() {
-        let cat = &categories[i];
-        row.push(cat.clone());
+        let cat = categories[i].clone();
+        row.push(cat);
         if  (i > 1 && (i % 3) == 2) || i == categories.len()-1 {
             rows.push(html!(<tr>
                 {for row}

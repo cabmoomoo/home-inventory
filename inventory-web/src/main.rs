@@ -30,8 +30,9 @@ pub struct Tab {
 
 #[function_component(App)]
 fn app() -> Html {
-    let items = use_reducer(ItemsState::default);
-    let inv_controller = Rc::new(InventoryController::new(items.clone()));
+    let items = use_reducer_eq(ItemsState::default);
+    let message_container = use_reducer_eq(MessageContainer::default);
+    let inv_controller = Rc::new(InventoryController::new(items.clone(), message_container.clone()));
 
     {
         let inv_controller = inv_controller.clone();
@@ -68,24 +69,29 @@ fn app() -> Html {
             <button class={classes!("tab_button", grocery_tab)} onclick={{let tab = tab.clone(); move |_| tab.set(Tabs::GroceryBag)}}>{"Grocery Bag"}</button>
             <button class={classes!("tab_button", shopping_tab)} onclick={{let tab = tab.clone(); move |_| tab.set(Tabs::ShoppingList)}}>{"Shopping List"}</button>
         </div>
+        <ContextProvider<InvCont> context={inv_controller.clone()}>
         <div class={classes!("tab", home_tab)}>
-            <ItemList controller={inv_controller.clone()} />
+            <ItemList />//controller={inv_controller.clone()} items={items.items.clone()}/>
         </div>
         <div class={classes!("tab", dinner_tab)}>
-            <Dinnerlist controller={inv_controller.clone()}/>
+            <Dinnerlist />
         </div>
         <div class={classes!("tab", grocery_tab)}>
-            <GroceryBag controller={inv_controller.clone()}/>
+            <GroceryBag />
         </div>
         <div class={classes!("tab", shopping_tab)}>
-            <ShoppingList controller={inv_controller.clone()} />
+            <ShoppingList />
         </div>
         <div class={classes!("tab", dev_tab)}>
-            <DevTab controller={inv_controller.clone()} />
+            <DevTab />
         </div>
+        </ContextProvider<InvCont>>
         <div class="dev">
             <button class={classes!("tab_button", dev_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::Dev)}}>{"Dev"}</button>
         </div>
+        <ContextProvider<MessageContainer> context={(*message_container).clone()}>
+            <MessageBox />
+        </ContextProvider<MessageContainer>>
     </>)
 }
 

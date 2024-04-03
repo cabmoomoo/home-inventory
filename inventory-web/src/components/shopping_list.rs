@@ -4,14 +4,10 @@ use yew::prelude::*;
 
 use crate::{models::Item, InvCont, ItemCategory};
 
-#[derive(Properties, PartialEq)]
-pub struct ShoppingListProps {
-    pub controller: InvCont
-}
-
 #[function_component]
-pub fn ShoppingList(props: &ShoppingListProps) -> Html {
-    let items = &props.controller.state.items;
+pub fn ShoppingList() -> Html {
+    let inv_cont = use_context::<InvCont>().expect("no ctx found");
+    let items = &inv_cont.state.items;
     let mut category_map: BTreeMap<String, Vec<Item>> = BTreeMap::new();
     for item in items {
         if item.desired_stock == 0 || item.stock > item.desired_stock {

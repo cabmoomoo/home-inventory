@@ -1,5 +1,3 @@
-
-
 use yew::prelude::*;
 
 use crate::models::Item;
@@ -11,8 +9,9 @@ pub struct ItemCategoryProps {
 }
 
 #[function_component]
-pub fn ItemCategory(ItemCategoryProps { name, items }: &ItemCategoryProps) -> Html{
-    let mut items = items.clone();
+pub fn ItemCategory(props: &ItemCategoryProps) -> Html{
+    let name = &props.name;
+    let mut items = props.items.clone();
     items.sort_by(|a, b| a.name.cmp(&b.name));
     let mut item_rows: Vec<Html>= vec![];
     for item in items {
@@ -25,12 +24,12 @@ pub fn ItemCategory(ItemCategoryProps { name, items }: &ItemCategoryProps) -> Ht
         } else {
             None
         };
-        item_rows.push(html!(<tr class={classes!(row_class)}>
+        item_rows.push(html!(<tr class={classes!(row_class)} key={item.name.clone()}>
             <td class="name">{item.name}</td>
             <td class="stock">{item.stock}</td>
         </tr>));
     }
-    html!(<td class="category">
+    html!(<td class="category" key={name.clone()}>
         <h3>{name}</h3>
         <hr />
         <table class="item-table">
