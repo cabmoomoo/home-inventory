@@ -143,7 +143,7 @@ impl InventoryController {
             let response = items_api::consume_items(consume).await;
             match response {
                 Ok(rows) => {
-                    message.dispatch(success_message(format!("{} items were successfully restocked", rows.rows_affected)));
+                    message.dispatch(success_message(format!("{} items were successfully consumed", rows.rows_affected)));
                     inv_conv.init_items();
                 },
                 Err(e) => {

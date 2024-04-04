@@ -37,7 +37,7 @@ impl Reducible for ItemsState {
     }
 }
 
-#[derive(Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct Inventory {
     pub name_to_id: BTreeMap<AttrValue, AttrValue>,
     pub item_id_map: BTreeMap<AttrValue, Item>

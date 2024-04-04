@@ -82,7 +82,7 @@ impl Component for Dinnerlist {
 
         html!(<div id="dinner-list" class="item-stock-tab">
         <div class="container">
-            <ItemSearch controller={controller.clone()} selection_callback={ctx.link().callback(DinnerListMsg::AddItem)}/>
+            <ItemSearch selection_callback={ctx.link().callback(DinnerListMsg::AddItem)}/>
             <table>
                 {for item_list}
             </table>

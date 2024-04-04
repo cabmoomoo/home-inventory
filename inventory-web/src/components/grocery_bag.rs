@@ -77,7 +77,7 @@ impl Component for GroceryBag {
 
         html!(<div id="grocery-bag" class="item-stock-tab">
         <div class="container">
-            <ItemSearch controller={controller.clone()} selection_callback={ctx.link().callback(GroceryBagMsg::AddItem)}/>
+            <ItemSearch selection_callback={ctx.link().callback(GroceryBagMsg::AddItem)}/>
             <table>
                 {for item_list}
             </table>
