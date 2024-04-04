@@ -27,6 +27,7 @@ pub fn ItemCategory(props: &ItemCategoryProps) -> Html{
         item_rows.push(html!(<tr class={classes!(row_class)} key={item.name.clone()}>
             <td class="name">{item.name}</td>
             <td class="stock">{item.stock}</td>
+            <td class="desired-stock">{format!(": {}", item.desired_stock)}</td>
         </tr>));
     }
     html!(<td class="category" key={name.clone()}>

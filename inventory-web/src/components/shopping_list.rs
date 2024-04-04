@@ -19,14 +19,34 @@ pub fn ShoppingList() -> Html {
             None => {category_map.insert(item.category.clone(), vec![item.clone()]);},
         }
     }
-    let categories: Html = category_map
-        .iter()
-        .map(|(name, items)| html!(<ItemCategory name={name.clone()} items={items.clone()} />))
-        .collect();
+    // let categories: Html = category_map
+    //     .iter()
+    //     .map(|(name, items)| html!(<ItemCategory name={name.clone()} items={items.clone()} />))
+    //     .collect();
+
+    let mut categories: Vec<Html> = vec![];
+    for (name, cat_items) in &category_map {
+        categories.push(html!(
+            <ItemCategory name={name.clone()} items={cat_items.clone()} />
+        ));
+    }
+
+    let mut rows: Vec<Html> = vec![];
+    let mut row: Vec<Html> = vec![];
+    for i in 0..categories.len() {
+        let cat = categories[i].clone();
+        row.push(cat);
+        if  (i > 1 && (i % 3) == 2) || i == categories.len()-1 {
+            rows.push(html!(<tr>
+                {for row}
+            </tr>));
+            row = vec![];
+        }
+    }
 
     html!(
         <div id="item-list">
-            {categories}
+            {rows}
         </div>
     )
 }

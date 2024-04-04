@@ -31,7 +31,7 @@ pub struct Tab {
 #[function_component(App)]
 fn app() -> Html {
     let items = use_reducer_eq(ItemsState::default);
-    let message_container = use_reducer_eq(MessageContainer::default);
+    let message_container = use_reducer(MessageContainer::default);
     let inv_controller = Rc::new(InventoryController::new(items.clone(), message_container.clone()));
 
     {

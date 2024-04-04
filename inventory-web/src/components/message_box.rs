@@ -111,9 +111,13 @@ impl Component for MessageBox {
     // }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        if !self.box_open {
-            return html!();
-        }
+
+        let box_open = 
+            if !self.box_open {
+                Some("hidden")
+            } else {
+                None
+            };
 
         let close_button: Html = html!(
             <button ref={&self.close_button} onclick={ctx.link().callback(|_| MessageBoxMsg::Close)}>{"Close"}</button>
@@ -129,7 +133,7 @@ impl Component for MessageBox {
             }
         }
         
-        html!(<div class="msg-box">
+        html!(<div class={classes!("msg-box", box_open)}>
             <h3>{self.name.clone()}</h3>
             <p>{self.message.clone()}</p>
             <div class="msg-options">

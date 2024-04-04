@@ -60,6 +60,10 @@ div.tabs button.active, div.tabs button.active:hover {
     background-color: var(--main);
 }
 
+div.tabs button:focus {
+    border: 0.2em dashed var(--accent);
+}
+
 div.tab {
     display: none; /* First change from original! */
     padding: 1em;
@@ -94,10 +98,13 @@ table.item-table td {
     border-bottom: 1px solid var(--light);
 }
 td.name {
-    width: 66%
+    width: auto;
 }
 td.stock {
-    width: 33%
+    text-align: right;
+}
+td.stock, td.desired-stock {
+    width: 7%;
 }
 
 tr.stock-critical {
@@ -112,7 +119,7 @@ div.item-stock-tab {
     display: block;
     /* vertical-align: middle; */
 }
-.item-stock-tab .container {
+.container {
     width: 75%;
     max-width: 800px;
     margin: 25px auto 0 auto;
@@ -154,7 +161,12 @@ div.dev {
 }
 
 /* Message Box */
+div.msg-box.hidden {
+    display: none;
+}
+
 div.msg-box {
+    display: block;
     border: 5px solid var(--dark);
     width: max-content;
     max-width: 75%;

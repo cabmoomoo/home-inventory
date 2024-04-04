@@ -85,10 +85,7 @@ impl InventoryController {
             match response {
                 Ok(item) => {
                     message.dispatch(success_message(format!(
-                        "Item {} changed successfully. Should now look like:\n
-                        category: {}\n
-                        stock: {}\n
-                        desired_stock: {}", 
+                        "Item {} changed successfully. Should now look like:\ncategory: {};\nstock: {};\ndesired_stock: {};", 
                         item.name, item.category, item.stock, item.desired_stock)));
                     inv_conv.init_items();
                 },

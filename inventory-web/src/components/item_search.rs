@@ -42,6 +42,8 @@ impl Component for ItemSearch {
                 if !search_value.is_empty() {
                     self.search_value = Some(search_value);
                     self.filtered_items = filter_items(&inventory.name_to_id, self.search_value.clone().unwrap());
+                } else {
+                    self.search_value = None;
                 }
             },
             ItemSearchMsg::SelectItem(item_id) => {
@@ -67,10 +69,11 @@ impl Component for ItemSearch {
         if self.search_value.is_some() {            
             for (item_name, item_id) in self.filtered_items.iter() {
                 let id = item_id.clone();
-                // let callback = Callback::from(move |_| ItemSearchMsg::SelectItem(id));
-                search_items.push(html!(<div class="search-item" onclick={ctx.link().callback(move |_| ItemSearchMsg::SelectItem(id.clone()))}>
-                    <p>{item_name.clone()}</p>
-                </div>));
+                search_items.push(html!(
+                    <div class="search-item" onclick={ctx.link().callback(move |_| ItemSearchMsg::SelectItem(id.clone()))}>
+                        <p>{item_name.clone()}</p>
+                    </div>
+                ));
             }
         }
         
@@ -92,15 +95,18 @@ impl Component for ItemSearch {
     }
 }
 
-/// Takes the name_to_id map from inventory and returns a vector of (name, id) filtered by the search_value.
+/// Takes the name_to_id map from inventory and returns a vector of (name, id) tuples filtered by the search_value.
+/// 
 /// search_value is made lowercase and broken up by split_ascii_whitespace() to make for a fuzzier search.
+/// 
+/// Returned vector only contains first 5 items that pass filtering.
 /// 
 /// # Examples
 /// 
 /// Pseudo-code example:
 /// ```
 /// item_name = "Dr Pepper Large 12oz Bottle";
-/// search_value = "pep can";
+/// search_value = "pep bot";
 /// assert!(item_name.contains(search_value));
 /// ```
 pub fn filter_items<'a>(items: &'a BTreeMap<AttrValue, AttrValue>, search_value: String) -> Vec<(AttrValue, AttrValue)> {
