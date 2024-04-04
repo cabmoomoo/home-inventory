@@ -38,9 +38,11 @@ impl Component for ItemSearch {
 
         match msg {
             ItemSearchMsg::SearchChange => {
-                let node = self.search_node.cast::<HtmlInputElement>().unwrap();
-                self.search_value = Some(node.value());
-                self.filtered_items = filter_items(&inventory.name_to_id, self.search_value.clone().unwrap());
+                let search_value = self.search_node.cast::<HtmlInputElement>().unwrap().value();
+                if !search_value.is_empty() {
+                    self.search_value = Some(search_value);
+                    self.filtered_items = filter_items(&inventory.name_to_id, self.search_value.clone().unwrap());
+                }
             },
             ItemSearchMsg::SelectItem(item_id) => {
                 props.selection_callback.emit(item_id);

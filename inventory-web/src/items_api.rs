@@ -2,8 +2,8 @@ use reqwasm::{http::Request, Error};
 
 use crate::models::*;
 
-// const BASE_URL: &str = "http://192.168.1.229:26530";
-const BASE_URL: &str = "http://127.0.0.1:26530";
+const BASE_URL: &str = "http://192.168.1.229:26530";
+// const BASE_URL: &str = "http://127.0.0.1:26530";
 
 pub async fn fetch_items() -> Result<Vec<Item>, Error> {
     Request::get(&format!("{BASE_URL}/items"))
