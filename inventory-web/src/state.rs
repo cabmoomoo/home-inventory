@@ -30,7 +30,7 @@ impl Reducible for ItemsState {
 
         match action {
             ItemAction::Set(items) => {next_items = items; inventory.make(next_items.clone())},
-            ItemAction::Add(item) => next_items.push(item),
+            ItemAction::Add(item) => {next_items.push(item); inventory.make(next_items.clone())},
         }
 
         Self { items: next_items, inventory }.into()

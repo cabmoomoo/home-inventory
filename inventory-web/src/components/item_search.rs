@@ -79,7 +79,6 @@ impl Component for ItemSearch {
         
         html!(<div class="item-search">
             <input class="search" placeholder="Search" ref={&self.search_node} 
-                // onkeyup={ctx.link().callback(|_| ItemSearchMsg::SearchChange)}
                 onkeyup={ctx.link().callback(|e: KeyboardEvent| {
                     if e.key().eq("Enter") {
                         ItemSearchMsg::SelectFirst

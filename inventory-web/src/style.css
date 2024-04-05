@@ -104,7 +104,7 @@ td.stock {
     text-align: right;
 }
 td.stock, td.desired-stock {
-    width: 7%;
+    width: 5ch;
 }
 
 tr.stock-critical {
