@@ -40,7 +40,7 @@ impl InventoryController {
                 },
             }
         });
-        // message.dispatch(MessageContainerAction::Change { 
+        // self.message.clone().dispatch(MessageContainerAction::Change { 
         //     name: "Test Message".into(),
         //     message: "This is a test messsage. It is designed to test the messaging function. Please stand by as this test is performed.".into(),
         //     additional_actions: None

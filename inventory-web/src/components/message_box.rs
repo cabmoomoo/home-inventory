@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use yew::prelude::*;
 
 pub enum MessageContainerAction {
@@ -9,7 +10,8 @@ pub enum MessageContainerAction {
 pub struct MessageContainer {
     pub name: AttrValue,
     pub message: AttrValue,
-    pub additional_actions: Option<Vec<(Callback<MouseEvent>, AttrValue)>>
+    pub additional_actions: Option<Vec<(Callback<MouseEvent>, AttrValue)>>,
+    pub time: DateTime<Local>
 } impl Reducible for MessageContainer {
     type Action = MessageContainerAction;
 
@@ -18,7 +20,7 @@ pub struct MessageContainer {
 
         match action {
             MessageContainerAction::Change { name, message, additional_actions } => {
-                new_message = MessageContainer { name, message, additional_actions };
+                new_message = MessageContainer { name, message, additional_actions, time: Local::now() };
             },
             MessageContainerAction::Make(msg) => new_message = msg
         }
@@ -31,14 +33,16 @@ pub fn success_message(msg: String) -> MessageContainerAction {
     MessageContainerAction::Make(MessageContainer {
         name: "Success".into(),
         message: msg.into(),
-        additional_actions: None
+        additional_actions: None,
+        time: Local::now()
     })
 }
 pub fn error_message(msg: String) -> MessageContainerAction {
     MessageContainerAction::Make(MessageContainer {
         name: "Error".into(),
         message: msg.into(),
-        additional_actions: None
+        additional_actions: None,
+        time: Local::now()
     })
 }
 
@@ -59,6 +63,7 @@ pub struct MessageBox {
     message: AttrValue,
     close_button: NodeRef,
     additional_actions: Option<Vec<(Callback<MouseEvent>, AttrValue)>>,
+    time: DateTime<Local>,
     _context_listener: ContextHandle<MessageContainer>
 }
 
@@ -78,6 +83,7 @@ impl Component for MessageBox {
                 message: AttrValue::default(), 
                 close_button: NodeRef::default(),
                 additional_actions: None, 
+                time: container.time,
                 _context_listener: context_listener };
         } else {
             return Self { 
@@ -85,7 +91,8 @@ impl Component for MessageBox {
                 name: container.name.clone(), 
                 message: container.message.clone(), 
                 close_button: NodeRef::default(),
-                additional_actions: container.additional_actions.clone(),
+                additional_actions: container.additional_actions.clone(), 
+                time: container.time,
                 _context_listener: context_listener }
         }
     }
@@ -97,6 +104,7 @@ impl Component for MessageBox {
                 self.name = m.name.clone();
                 self.message = m.message.clone();
                 self.additional_actions = m.additional_actions.clone();
+                self.time = m.time.clone();
             },
             MessageBoxMsg::Close => self.box_open = false,
         }
@@ -139,6 +147,9 @@ impl Component for MessageBox {
             <div class="msg-options">
                 {for additional_buttons}
                 {close_button}
+            </div>
+            <div class="msg-time">
+                {self.time.to_rfc2822()}
             </div>
         </div>)
     }

@@ -191,6 +191,14 @@ div.msg-options button {
     height: 3em;
 }
 
+div.msg-time {
+    position: absolute;
+    font-size: small;
+    color: var(--light);
+    right: 2px;
+    top: 2px;
+}
+
 /* Button focus */
 button:focus {
     border: 0.4em dashed var(--accent)
