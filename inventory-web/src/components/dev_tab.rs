@@ -24,7 +24,7 @@ impl Component for DevTab {
 
     fn create(_ctx: &Context<Self>) -> Self {
         let mut input_nodes = BTreeMap::new();
-        let attrs = vec!["name", "category", "stock", "desired stock", "ID"];
+        let attrs = vec!["name", "category", "stock", "desired stock", "track generally", "ID"];
         for attr in attrs {
             input_nodes.insert(attr.into(), NodeRef::default());
         }
@@ -60,6 +60,7 @@ impl Component for DevTab {
                 let category = self.input_nodes["category"].cast::<HtmlInputElement>().unwrap().value();
                 let stock = self.input_nodes["stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
                 let desired_stock = self.input_nodes["desired stock"].cast::<HtmlInputElement>().unwrap().value().parse().unwrap_or(0);
+                let track_generally = self.input_nodes["track generally"].cast::<HtmlInputElement>().unwrap().checked();
                 if name.is_empty() {
                     return false;
                 }
@@ -71,7 +72,7 @@ impl Component for DevTab {
                     message.dispatch(error_message("An item with that name already exists".into()));
                     return false;
                 }
-                controller.add_full_item(name, category, stock, desired_stock);
+                controller.add_full_item(name, category, stock, desired_stock, track_generally);
                 clear_inputs = true;
             },
             DevTabMsg::ChangeItem => {
@@ -79,6 +80,7 @@ impl Component for DevTab {
                 let category = self.input_nodes["category"].cast::<HtmlInputElement>().unwrap().value();
                 let stock_input = self.input_nodes["stock"].cast::<HtmlInputElement>().unwrap().value();
                 let desired_stock_input = self.input_nodes["desired stock"].cast::<HtmlInputElement>().unwrap().value();
+                let track_generally = self.input_nodes["track generally"].cast::<HtmlInputElement>().unwrap().checked();
                 let id = self.input_nodes["ID"].cast::<HtmlInputElement>().unwrap().value();
 
                 if name.is_empty() && id.is_empty() {
@@ -130,6 +132,7 @@ impl Component for DevTab {
                     stock,
                     desired_stock,
                     last_updated: original.last_updated.clone(),
+                    track_general: track_generally
                 };
 
                 controller.change_item(item_id.to_string(), item);
@@ -163,11 +166,16 @@ impl Component for DevTab {
                 self.input_nodes["stock"].cast::<HtmlInputElement>().unwrap().set_value(&item.stock.to_string());
                 self.input_nodes["desired stock"].cast::<HtmlInputElement>().unwrap().set_value(&item.desired_stock.to_string());
                 self.input_nodes["ID"].cast::<HtmlInputElement>().unwrap().set_value(&item.id);
+                self.input_nodes["track generally"].cast::<HtmlInputElement>().unwrap().set_checked(item.track_general);
                 clear_inputs = false;
             },
         }
         if clear_inputs {
-            for (_, node) in &self.input_nodes {
+            for (name, node) in &self.input_nodes {
+                if name.eq("track generally") {
+                    node.cast::<HtmlInputElement>().unwrap().set_checked(false);
+                    continue;
+                }
                 node.cast::<HtmlInputElement>().unwrap().set_value("");
             }
         }
@@ -189,6 +197,8 @@ impl Component for DevTab {
                     <input type="text" ref={&self.input_nodes["stock"]}/>
                     <label>{"Desired stock:"}</label>
                     <input type="text" ref={&self.input_nodes["desired stock"]}/>
+                    <label>{"Track generally:"}</label>
+                    <input type="checkbox" ref={&self.input_nodes["track generally"]}/>
                     <label>{"ID:"}</label>
                     <input type="text" ref={&self.input_nodes["ID"]}/>
                 </div></th>

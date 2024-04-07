@@ -33,6 +33,8 @@ pub struct Item {
     pub stock: i64,
     pub desired_stock: i64,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub track_general: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<DateTime<Utc>>
 }
 
@@ -59,6 +61,7 @@ impl TryFrom<W<Object>> for Item {
             category: W(map["category"].clone()).try_into()?,
             stock: W(map["stock"].clone()).try_into()?,
             desired_stock: W(map["desired_stock"].clone()).try_into()?,
+            track_general: Some(W(map["track_general"].clone()).try_into()?),
             last_updated: Some(W(map["last_updated"].clone()).try_into()?)
         })
     }
@@ -111,9 +114,9 @@ impl DB {
         let res = self.ds.execute(query, &self.sesh, vars).await?;
         Ok(res)
     }
-    //category = 'category', stock = 0, desired_stock = 0,
+    
     pub async fn add_item(&self, name: &str, category: &str) -> Result<Item, crate::error::Error> {
-        let sql = "CREATE items SET name = $name, category = $category, stock = 0, desired_stock = 0, last_updated = time::now()";
+        let sql = "CREATE items SET name = $name, category = $category, stock = 0, desired_stock = 0, track_general = false, last_updated = time::now()";
         let vars: BTreeMap<String, Value> = map!(
             "name".into() => Value::Strand(name.into()),
             "category".into() => Value::Strand(category.into())
@@ -136,13 +139,14 @@ impl DB {
         Ok(AffectedRows { rows_affected: 1 })
     }
 
-    pub async fn add_full_item(&self, name: &str, category: &str, stock: i64, desired_stock: i64) -> Result<Item, crate::error::Error> {
-        let sql = "CREATE items SET name = $name, category = $category, stock = $stock, desired_stock = $desired_stock, last_updated = time::now()";
+    pub async fn add_full_item(&self, name: &str, category: &str, stock: i64, desired_stock: i64, track_general: bool) -> Result<Item, crate::error::Error> {
+        let sql = "CREATE items SET name = $name, category = $category, stock = $stock, desired_stock = $desired_stock, track_general = $track_general, last_updated = time::now()";
         let vars: BTreeMap<String, Value> = map!(
             "name".into() => Value::Strand(name.into()),
             "category".into() => Value::Strand(category.into()),
             "stock".into() => Value::Number(stock.into()),
-            "desired_stock".into() => Value::Number(desired_stock.into())
+            "desired_stock".into() => Value::Number(desired_stock.into()),
+            "track_general".into() => Value::Bool(track_general.into())
         );
         let res = self.execute(sql, Some(vars)).await?;
 
@@ -229,14 +233,15 @@ impl DB {
     }
 
     pub async fn change_item(&self, id: &str, item: Item) -> Result<Item, crate::error::Error> {
-        let sql = "UPDATE $th SET name = $name, category = $category, stock = $stock, desired_stock = $desired_stock, last_updated = time::now()";
+        let sql = "UPDATE $th SET name = $name, category = $category, stock = $stock, desired_stock = $desired_stock, track_general = $track_general, last_updated = time::now()";
         let tid = format!("{}", id);
         let vars: BTreeMap<String, Value> = map!(
             "th".into() => thing(&tid)?.into(),
             "name".into() => Value::Strand(item.name.into()),
             "category".into() => Value::Strand(item.category.into()),
             "stock".into() => Value::Number(item.stock.into()),
-            "desired_stock".into() => Value::Number(item.desired_stock.into())
+            "desired_stock".into() => Value::Number(item.desired_stock.into()),
+            "track_general".into() => Value::Bool(item.track_general.unwrap_or(false).into())
         );
         let res = self.execute(sql, Some(vars)).await?;
 

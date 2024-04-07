@@ -39,13 +39,15 @@ async fn set_desired_stock(id: &str, desired_stock: i64, db: &State<DB>) -> Resu
 
 #[post("/dev/item/<name>", format="json", data="<data>")]
 async fn add_full_item(name: &str, data: Json<Vec<String>>, db: &State<DB>) -> Result<Json<Item>, std::io::Error> {
+    // [category, track_general, stock, desired_stock]
     let category = &data[0];
+    let track_general = data[1].clone().parse().unwrap_or(false);
     let stock;
     let desired_stock;
-    match data.get(1) {
+    match data.get(2) {
         Some(s) => {
             stock = s.parse().unwrap_or_default();
-            match data.get(2) {
+            match data.get(3) {
                 Some(d) => desired_stock = d.parse().unwrap_or_default(),
                 None => desired_stock = 0,
             }
@@ -54,9 +56,9 @@ async fn add_full_item(name: &str, data: Json<Vec<String>>, db: &State<DB>) -> R
             stock = 0;
             desired_stock = 0;
         }
-    }  
+    }
     let item = db
-        .add_full_item(name, category, stock, desired_stock)
+        .add_full_item(name, category, stock, desired_stock, track_general)
         .await
         .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
 
@@ -123,6 +125,16 @@ async fn delete_item(id: &str, db: &State<DB>) -> Result<Json<AffectedRows>, std
     Ok(Json(result))
 }
 
+// #[post("/dev/dangerous", format="json", data="<data>")]
+// async fn run_command(data: Json<&str>, db: &State<DB>) -> Result<Json<bool>, std::io::Error> {
+//     let _result = db
+//         .execute(data.0, None)
+//         .await
+//         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
+
+//     Ok(Json(true))
+// }
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RestockItem {
     pub id: String,
@@ -182,7 +194,8 @@ async fn rocket() -> _ {
                 get_item, get_all_items, 
                 restock_item, consume_item, 
                 restock_items, consume_items,
-                change_item, delete_item
+                change_item, delete_item,
+                // run_command
             ],
         )
         .attach(CORS)

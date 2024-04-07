@@ -62,11 +62,11 @@ impl InventoryController {
         });
     }
 
-    pub fn add_full_item(&self, name: String, category: String, stock: i64, desired_stock: i64) {
+    pub fn add_full_item(&self, name: String, category: String, stock: i64, desired_stock: i64, track_generally: bool) {
         let items = self.state.clone();
         let message = self.message.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            let response = items_api::add_full_item(&name, &category, stock, desired_stock).await;
+            let response = items_api::add_full_item(&name, &category, stock, desired_stock, track_generally).await;
             match response {
                 Ok(item) => {
                     message.dispatch(success_message(format!("Full item {} added successfully", item.name)));
@@ -85,8 +85,8 @@ impl InventoryController {
             match response {
                 Ok(item) => {
                     message.dispatch(success_message(format!(
-                        "Item {} changed successfully. Should now look like:\ncategory: {};\nstock: {};\ndesired_stock: {};", 
-                        item.name, item.category, item.stock, item.desired_stock)));
+                        "Item {} changed successfully. Should now look like: category: {}; stock: {}; desired_stock: {}; track_generally: {};", 
+                        item.name, item.category, item.stock, item.desired_stock, item.track_general)));
                     inv_conv.init_items();
                 },
                 Err(e) => {

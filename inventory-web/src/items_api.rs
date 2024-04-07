@@ -24,9 +24,9 @@ pub async fn new_item(name: &str, category: &str) -> Result<Item, Error> {
         .await
 }
 
-pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock: i64) -> Result<Item, Error> {
+pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock: i64, track_generally: bool) -> Result<Item, Error> {
     Request::post(&format!("{BASE_URL}/dev/item/{name}"))
-        .body(format!("[\"{category}\", \"{stock}\", \"{desired_stock}\"]"))
+        .body(format!("[\"{category}\", \"{track_generally}\", \"{stock}\", \"{desired_stock}\"]"))
         .header("Content-Type", "application/json")
         .send()
         .await?

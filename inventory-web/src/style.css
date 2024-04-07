@@ -103,8 +103,11 @@ td.name {
 td.stock {
     text-align: right;
 }
-td.stock, td.desired-stock {
-    width: 5ch;
+td.track-general {
+    text-align: center;
+}
+td.stock, td.desired-stock td.track-general{
+    width: 10ch;
 }
 
 tr.stock-critical {

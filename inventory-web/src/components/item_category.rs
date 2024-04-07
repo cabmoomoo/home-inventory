@@ -24,11 +24,25 @@ pub fn ItemCategory(props: &ItemCategoryProps) -> Html{
         } else {
             None
         };
-        item_rows.push(html!(<tr class={classes!(row_class)} key={item.name.clone()}>
-            <td class="name">{item.name}</td>
-            <td class="stock">{item.stock}</td>
-            <td class="desired-stock">{format!(": {}", item.desired_stock)}</td>
-        </tr>));
+        if item.track_general {
+            let general_msg = if item.stock == 2 {
+                "Good"
+            } else if item.stock == 1 {
+                "Low"
+            } else {
+                "Out"
+            };
+            item_rows.push(html!(<tr class={classes!(row_class)} key={item.name.clone()}>
+                <td class="name">{item.name}</td>
+                <td colspan="2" class="track-general">{general_msg}</td>
+            </tr>));
+        } else {
+            item_rows.push(html!(<tr class={classes!(row_class)} key={item.name.clone()}>
+                <td class="name">{item.name}</td>
+                <td class="stock">{item.stock}</td>
+                <td class="desired-stock">{format!(": {}", item.desired_stock)}</td>
+            </tr>));
+        }
     }
     html!(<td class="category" key={name.clone()}>
         <h3>{name}</h3>
