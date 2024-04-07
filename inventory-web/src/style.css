@@ -105,9 +105,10 @@ td.stock {
 }
 td.track-general {
     text-align: center;
-}
-td.stock, td.desired-stock td.track-general{
     width: 10ch;
+}
+td.stock, td.desired-stock{
+    width: 5ch;
 }
 
 tr.stock-critical {
