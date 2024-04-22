@@ -8,12 +8,15 @@ use db::{AffectedRows, Item, DB};
 use rocket::{serde::json::Json, State};
 use serde::{Deserialize, Serialize};
 use surrealdb::{dbs::Session, kvs::Datastore};
+use log::{self, info, warn};
+use log4rs;
 
 mod db;
 mod error;
 mod prelude;
 mod utils;
 mod cors;
+mod logging;
 
 #[post("/item", format = "json", data = "<data>")]
 async fn add_item(data: Json<Vec<String>>, db: &State<DB>) -> Result<Json<Item>, std::io::Error> {
@@ -23,6 +26,8 @@ async fn add_item(data: Json<Vec<String>>, db: &State<DB>) -> Result<Json<Item>,
         .add_item(name, category)
         .await
         .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
+
+    info!(target: "database", "Created new item:\n{}", item);
 
     Ok(Json(item))
 }
@@ -61,6 +66,8 @@ async fn add_full_item(name: &str, data: Json<Vec<String>>, db: &State<DB>) -> R
         .add_full_item(name, category, stock, desired_stock, track_general)
         .await
         .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
+
+    info!(target: "database", "Created new item:\n{}", item);
 
     Ok(Json(item))
 }
@@ -112,6 +119,8 @@ async fn change_item(id: &str, data: Json<Item>, db: &State<DB>) -> Result<Json<
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
+    info!(target: "database", "Changed item:\n{}", result);
+
     Ok(Json(result))
 }
 
@@ -121,6 +130,8 @@ async fn delete_item(id: &str, db: &State<DB>) -> Result<Json<AffectedRows>, std
         .delete_item(id)
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
+
+    warn!(target: "database", "Deleted: {}", id);
 
     Ok(Json(result))
 }
@@ -135,44 +146,53 @@ async fn delete_item(id: &str, db: &State<DB>) -> Result<Json<AffectedRows>, std
 //     Ok(Json(true))
 // }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RestockItem {
     pub id: String,
     pub count: i64
+} impl std::fmt::Display for RestockItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.id, self.count)
+    }
 }
 
 #[patch("/items/restock", format="json", data="<data>")]
 async fn restock_items(data: Json<Vec<RestockItem>>, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
-    // let mut data_array = vec![];
-    // for item in data.0 {
-    //     // let data_obj: BTreeMap<String, Value> = map!(
-    //     //     "id".into() => item.id.into(),
-    //     //     "count".into() => item.count.into()
-    //     // );
-    //     let data_obj: Vec<Value> = vec![Value::Strand(item.id.into()), Value::Number(item.count.into())];
-    //     data_array.push(Value::from(data_obj));
-    // }
-
+    let data = data.0;
     let result = db
-        .restock_items(data.0)
+        .restock_items(data.clone())
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
+
+    info!(target: "database", "Restocked:\n{}", logging::log_vec(data));
 
     Ok(Json(result))
 }
 
 #[patch("/items/consume", format="json", data="<data>")]
 async fn consume_items(data: Json<Vec<RestockItem>>, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
+    let data = data.0;
     let result = db
-        .consume_items(data.0)
+        .consume_items(data.clone())
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
+    info!(target: "database", "Consumed:\n{}", logging::log_vec(data));
+    
     Ok(Json(result))
+}
+
+#[get("/logs")]
+async fn present_logs() -> Result<Json<(String, String)>, std::io::Error> {
+    let running = std::fs::read_to_string("log/running.log").unwrap_or_default();
+    let yesterday = std::fs::read_to_string("log/old1.log").unwrap_or_default();
+    Ok(Json((running, yesterday)))
 }
 
 #[launch]
 async fn rocket() -> _ {
+    log4rs::init_file("logging_config.yaml", Default::default()).unwrap();
+
     let ds = Arc::new(Datastore::new("file://inventory.db").await.unwrap());
     // let ds = Arc::new(Datastore::new("memory").await.unwrap());
     let mut sesh = Session::default();
@@ -195,7 +215,8 @@ async fn rocket() -> _ {
                 restock_item, consume_item, 
                 restock_items, consume_items,
                 change_item, delete_item,
-                // run_command
+                // run_command,
+                present_logs
             ],
         )
         .attach(CORS)

@@ -67,7 +67,9 @@ impl Component for Dinnerlist {
                 for (id, node) in self.general_nodes.iter() {
                     let selected_general_count = node.cast::<HtmlSelectElement>().unwrap().selected_options().item(0).unwrap().id();
                     let count;
-                    if selected_general_count.eq("low") {
+                    if selected_general_count.eq("none") {
+                        continue;
+                    } else if selected_general_count.eq("low") {
                         count = 1;
                     } else { // "out"
                         if inventory.item_id_map[id].stock == 2 {
@@ -81,7 +83,9 @@ impl Component for Dinnerlist {
                 self.list_items = vec![];
                 self.item_nodes = BTreeMap::new();
                 self.general_nodes = BTreeMap::new();
-                controller.consume_items(items);
+                if items.len() > 0 {
+                    controller.consume_items(items);
+                }
             },
         }
 
@@ -98,10 +102,12 @@ impl Component for Dinnerlist {
             let item = &id_map[item_id];
             let item_name = &item.name;
             if item.track_general {
-                let mut general_options: Vec<Html> = vec![html!(<option value="out" id="out">{"Out"}</option>)];
-                if item.stock == 2 {
+                let mut general_options: Vec<Html> = vec![html!(<option value="none" id="none">{"No Change"}</option>)];
+                if item.stock > 0 {
+                    general_options.push(html!(<option value="out" id="out">{"Out"}</option>));
+                }
+                if item.stock > 1 {
                     general_options.push(html!(<option value="low" id="low">{"Low"}</option>));
-                    // general_options.reverse();
                 }
                 item_list.push(html!(<tr key={item_id.to_string()}>
                     <td class="name">{item_name}</td>

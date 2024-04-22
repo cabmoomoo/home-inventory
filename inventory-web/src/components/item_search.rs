@@ -111,6 +111,9 @@ impl Component for ItemSearch {
 pub fn filter_items<'a>(items: &'a BTreeMap<AttrValue, AttrValue>, search_value: String) -> Vec<(AttrValue, AttrValue)> {
     let mut filters = vec![];
     for part in search_value.split_ascii_whitespace() {
+        if part.is_empty() {
+            continue;
+        }
         let part = part.to_lowercase();
         filters.push(move |a: &&AttrValue| a.to_lowercase().contains(&part));
     }

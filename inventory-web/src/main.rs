@@ -20,6 +20,7 @@ pub enum Tabs {
     DinnerList,
     GroceryBag,
     ShoppingList,
+    Logs,
     Dev
 }
 
@@ -53,12 +54,13 @@ fn app() -> Html {
     //     })
     // };
 
-    let (mut home_tab, mut dinner_tab, mut grocery_tab, mut shopping_tab, mut dev_tab) = (None,None,None,None,None);
+    let (mut home_tab, mut dinner_tab, mut grocery_tab, mut shopping_tab, mut log_tab, mut dev_tab) = (None,None,None,None,None,None);
     match *tab {
     Tabs::Home => home_tab = Some("active"),
     Tabs::DinnerList => dinner_tab = Some("active"),
     Tabs::GroceryBag => grocery_tab = Some("active"),
     Tabs::ShoppingList => shopping_tab = Some("active"),
+    Tabs::Logs => log_tab = Some("active"),
     Tabs::Dev => dev_tab = Some("active"),
     }
 
@@ -82,10 +84,16 @@ fn app() -> Html {
         <div class={classes!("tab", shopping_tab)}>
             <ShoppingList />
         </div>
+        <div class={classes!("tab", log_tab)}>
+            <LogTab />
+        </div>
         <div class={classes!("tab", dev_tab)}>
             <DevTab />
         </div>
         </ContextProvider<InvCont>>
+        <div class="logs">
+            <button class={classes!("tab_button", log_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::Logs)}}>{"Logs"}</button>
+        </div>
         <div class="dev">
             <button class={classes!("tab_button", dev_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::Dev)}}>{"Dev"}</button>
         </div>

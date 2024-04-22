@@ -81,6 +81,14 @@ pub async fn consume_items(items: Vec<RestockItem>) -> Result<AffectedRows, Erro
 //         .await
 // }
 
+pub async fn fetch_logs() -> Result<(String, String), Error> {
+    Request::get(&format!("{BASE_URL}/logs"))
+        .send()
+        .await?
+        .json()
+        .await
+}
+
 fn restock_items_to_json(items: Vec<RestockItem>) -> String {
     let mut result = "[".to_owned();
     for item in items {

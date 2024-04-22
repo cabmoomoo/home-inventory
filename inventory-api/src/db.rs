@@ -36,6 +36,16 @@ pub struct Item {
     pub track_general: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<DateTime<Utc>>
+} impl std::fmt::Display for Item {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "\tid: {}", &self.id.clone().unwrap_or("None".to_string()))?;
+        writeln!(f, "\tname: {}", &self.name)?;
+        writeln!(f, "\tcategory: {}", &self.category)?;
+        writeln!(f, "\tstock {}", &self.stock)?;
+        writeln!(f, "\tdesired_stock: {}", &self.desired_stock)?;
+        writeln!(f, "\ttrack_general: {}", &self.track_general.unwrap_or(false))?;
+        write!(f, "\tlast_updated: {}", &self.last_updated.unwrap())
+    }
 }
 
 // impl From<W<Object>> for Item {

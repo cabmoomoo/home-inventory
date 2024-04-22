@@ -207,3 +207,31 @@ div.msg-time {
 button:focus {
     border: 0.4em dashed var(--accent)
 }
+
+/* Logs */
+div.logs {
+    position: fixed;
+    left: 2px;
+    bottom: 2px;
+}
+div.logs button {
+    height: 3em;
+    width: auto;
+}
+
+#logs-tab h3 {
+    margin: 0;
+}
+#logs-tab button {
+    height: 3em;
+}
+.log-container table{
+    width: 100%;
+}
+.log-container td {
+    white-space: pre-wrap;
+    border: 1px solid var(--light);
+}
+.log-container .time {
+    width: 20%;
+}
