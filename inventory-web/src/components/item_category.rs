@@ -17,9 +17,9 @@ pub fn ItemCategory(props: &ItemCategoryProps) -> Html{
     for item in items {
         let row_class = if item.desired_stock == 0 {
             None
-        } else if item.stock < item.desired_stock {
+        } else if item.stock == 0 || item.stock < (item.desired_stock - 1) {
             Some("stock-critical")
-        } else if item.stock == item.desired_stock {
+        } else if item.stock < item.desired_stock {
             Some("stock-low")
         } else {
             None

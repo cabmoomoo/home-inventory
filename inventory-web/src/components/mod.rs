@@ -6,6 +6,7 @@ mod item_list;
 mod item_search;
 mod logs;
 mod message_box;
+mod reinventory;
 mod shopping_list;
 
 pub use dev_tab::*;
@@ -16,4 +17,5 @@ pub use item_list::*;
 pub use item_search::*;
 pub use logs::*;
 pub use message_box::*;
+pub use reinventory::*;
 pub use shopping_list::*;

@@ -260,6 +260,16 @@ impl DB {
         W(first_res.result?.first()).try_into()
     }
 
+    pub async fn change_items(&self, data: Vec<Item>) -> Result<AffectedRows, crate::error::Error> {
+        let mut sql = "BEGIN TRANSACTION;".to_owned();
+        for item in data.iter() {
+            sql += &format!("UPDATE {} SET stock = {}, desired_stock = {}, last_updated = time::now();", item.id.clone().unwrap().to_string(), item.stock.to_string(), item.desired_stock.to_string());
+        }
+        sql += "COMMIT TRANSACTION;";
+        let _ = self.execute(&sql, None).await?;
+        Ok(AffectedRows { rows_affected: data.len() })
+    }
+
     pub async fn delete_item(&self, id: &str) -> Result<AffectedRows, crate::error::Error> {
         let sql = "DELETE $th";
         let tid = format!("{}", id);

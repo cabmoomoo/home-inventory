@@ -97,6 +97,24 @@ impl InventoryController {
         });
     }
 
+    pub fn change_items(&self, items: Vec<Item>) {
+        let message = self.message.clone();
+        let inv_conv = std::rc::Rc::new(self.clone());
+        wasm_bindgen_futures::spawn_local(async move {
+            let response = items_api::change_items(items).await;
+            match response {
+                Ok(rows) => {
+                    message.dispatch(success_message(format!("{} items were successfully changed", rows.rows_affected)));
+                    inv_conv.init_items();
+                },
+                Err(e) => {
+                    message.dispatch(error_message(e.to_string()));
+                    return;
+                },
+            }
+        });
+    }
+
     pub fn delete_item(&self, id: String) {
         let message = self.message.clone();
         let inv_conv = std::rc::Rc::new(self.clone());

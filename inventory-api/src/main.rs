@@ -124,6 +124,16 @@ async fn change_item(id: &str, data: Json<Item>, db: &State<DB>) -> Result<Json<
     Ok(Json(result))
 }
 
+#[patch("/items/update", format="json", data="<data>")]
+async fn change_items(data: Json<Vec<Item>>, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
+    let result = db
+        .change_items(data.0)
+        .await
+        .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
+
+    Ok(Json(result))
+}
+
 #[delete("/item/<id>")]
 async fn delete_item(id: &str, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
     let result = db
@@ -202,9 +212,10 @@ async fn rocket() -> _ {
 
     let db = DB {ds, sesh};
 
-    env::set_var("ROCKET_ADDRESS", "192.168.1.229");
+    // env::set_var("ROCKET_ADDRESS", "192.168.1.229");
+    env::set_var("ROCKET_ADDRESS", "192.168.1.11");
     env::set_var("ROCKET_PORT", "26530");
-    env::set_var("ROCKET_LOG_LEVEL", "off");
+    // env::set_var("ROCKET_LOG_LEVEL", "off");
 
     rocket::build()
         .mount(
@@ -214,7 +225,8 @@ async fn rocket() -> _ {
                 get_item, get_all_items, 
                 restock_item, consume_item, 
                 restock_items, consume_items,
-                change_item, delete_item,
+                change_item, change_items,
+                delete_item,
                 // run_command,
                 present_logs
             ],

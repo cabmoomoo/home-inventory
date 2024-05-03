@@ -21,7 +21,8 @@ pub enum Tabs {
     GroceryBag,
     ShoppingList,
     Logs,
-    Dev
+    Dev,
+    ReInventory
 }
 
 #[derive(Default, PartialEq, Clone)]
@@ -54,7 +55,7 @@ fn app() -> Html {
     //     })
     // };
 
-    let (mut home_tab, mut dinner_tab, mut grocery_tab, mut shopping_tab, mut log_tab, mut dev_tab) = (None,None,None,None,None,None);
+    let (mut home_tab, mut dinner_tab, mut grocery_tab, mut shopping_tab, mut log_tab, mut dev_tab, mut reinv_tab) = (None,None,None,None,None,None,None);
     match *tab {
     Tabs::Home => home_tab = Some("active"),
     Tabs::DinnerList => dinner_tab = Some("active"),
@@ -62,6 +63,7 @@ fn app() -> Html {
     Tabs::ShoppingList => shopping_tab = Some("active"),
     Tabs::Logs => log_tab = Some("active"),
     Tabs::Dev => dev_tab = Some("active"),
+    Tabs::ReInventory => reinv_tab = Some("active")
     }
 
     html!(<>
@@ -90,12 +92,20 @@ fn app() -> Html {
         <div class={classes!("tab", dev_tab)}>
             <DevTab />
         </div>
+        <div class={classes!("tab", reinv_tab)}>
+            if reinv_tab.is_some() {
+                <ReInventory />
+            }
+        </div>
         </ContextProvider<InvCont>>
         <div class="logs">
             <button class={classes!("tab_button", log_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::Logs)}}>{"Logs"}</button>
         </div>
         <div class="dev">
             <button class={classes!("tab_button", dev_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::Dev)}}>{"Dev"}</button>
+            <button class={classes!("tab_button", reinv_tab)} onclick={{let tab=tab.clone(); move |_| tab.set(Tabs::ReInventory)}}>{"ReInventory"}</button>
+        </div>
+        <div class="reinv">
         </div>
         <ContextProvider<MessageContainer> context={(*message_container).clone()}>
             <MessageBox />

@@ -10,7 +10,7 @@ pub fn ShoppingList() -> Html {
     let items = &inv_cont.state.items;
     let mut category_map: BTreeMap<String, Vec<Item>> = BTreeMap::new();
     for item in items {
-        if item.desired_stock == 0 || item.stock > item.desired_stock {
+        if item.desired_stock == 0 || item.stock >= item.desired_stock {
             continue
         }
         let cat_fetch = category_map.get_mut(&item.category);

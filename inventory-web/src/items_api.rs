@@ -2,7 +2,8 @@ use reqwasm::{http::Request, Error};
 
 use crate::models::*;
 
-const BASE_URL: &str = "http://192.168.1.229:26530";
+// const BASE_URL: &str = "http://192.168.1.229:26530";
+const BASE_URL: &str = "http://192.168.1.11:26530";
 // const BASE_URL: &str = "http://127.0.0.1:26530";
 
 pub async fn fetch_items() -> Result<Vec<Item>, Error> {
@@ -37,6 +38,16 @@ pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock
 pub async fn change_item(id: &str, item: Item) -> Result<Item, Error> {
     Request::patch(&format!("{BASE_URL}/item/update/{id}"))
         .body(item.to_json())
+        .header("Content-Type", "application/json")
+        .send()
+        .await?
+        .json()
+        .await
+}
+
+pub async fn change_items(items: Vec<Item>) -> Result<AffectedRows, Error> {
+    Request::patch(&format!("{BASE_URL}/items/update"))
+        .body(serde_json::to_string(&items).unwrap())
         .header("Content-Type", "application/json")
         .send()
         .await?
