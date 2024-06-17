@@ -212,8 +212,8 @@ async fn rocket() -> _ {
 
     let db = DB {ds, sesh};
 
-    // env::set_var("ROCKET_ADDRESS", "192.168.1.229");
-    env::set_var("ROCKET_ADDRESS", "192.168.1.11");
+    env::set_var("ROCKET_ADDRESS", "192.168.1.229");
+    // env::set_var("ROCKET_ADDRESS", "192.168.1.11");
     env::set_var("ROCKET_PORT", "26530");
     // env::set_var("ROCKET_LOG_LEVEL", "off");
 

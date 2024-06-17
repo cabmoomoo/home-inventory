@@ -1,11 +1,14 @@
 use std::collections::BTreeMap;
 
+use gloo_storage::{LocalStorage, Storage};
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;
 
 use crate::{models::RestockItem, InvCont, ItemSearch};
 
 pub enum GroceryBagMsg {
+    RetrieveStorage,
+    UpdateStorage(AttrValue),
     AddItem(AttrValue),
     Submit
 }
@@ -13,7 +16,9 @@ pub enum GroceryBagMsg {
 pub struct GroceryBag {
     list_items: Vec<AttrValue>,
     item_nodes: BTreeMap<AttrValue, NodeRef>,
-    general_nodes: BTreeMap<AttrValue, NodeRef>
+    general_nodes: BTreeMap<AttrValue, NodeRef>,
+    storage: BTreeMap<String, String>,
+    init_callback: Vec<ContextHandle<InvCont>>
 }
 
 impl Component for GroceryBag {
@@ -21,8 +26,26 @@ impl Component for GroceryBag {
 
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self { list_items: vec![], item_nodes: BTreeMap::new(), general_nodes: BTreeMap::new() }
+    fn create(ctx: &Context<Self>) -> Self {
+        let mut storage = BTreeMap::new();
+        let mut init_callback = vec![];
+        let storage_grab = LocalStorage::get::<BTreeMap<String, String>>("grocery_bag");
+        if storage_grab.is_ok() {
+            storage = storage_grab.unwrap();
+            let (_, handle) = ctx.link().context::<InvCont>(ctx.link().callback(|_| GroceryBagMsg::RetrieveStorage)).expect("no ctx found");
+            init_callback.push(handle);
+        } else {
+            // Err result could be because key doesn't exist, or becuase the key is malformed and couldn't be read.
+            // No harm in deleting in either case.
+            LocalStorage::delete("grocery_bag");
+        }
+        Self { 
+            list_items: vec![], 
+            item_nodes: BTreeMap::new(), 
+            general_nodes: BTreeMap::new(),
+            storage,
+            init_callback
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -30,6 +53,45 @@ impl Component for GroceryBag {
         let inventory = &controller.state.inventory;
 
         match msg {
+            GroceryBagMsg::RetrieveStorage => {
+                self.list_items = vec![];
+                self.item_nodes = BTreeMap::new();
+                self.general_nodes = BTreeMap::new();
+                for (item_id, _value) in self.storage.iter() {
+                    let item_id = AttrValue::from(item_id.clone());
+                    let item_get = &inventory.item_id_map.get(&item_id);
+                    let item = match item_get {
+                        Some(x) => x,
+                        None => continue,
+                    };
+                    if item.track_general {
+                        if !self.list_items.contains(&item_id) {
+                            self.list_items.push(item_id.clone());
+                            self.general_nodes.insert(item_id, NodeRef::default());
+                        }
+                    } else {
+                        if !self.list_items.contains(&item_id) {
+                            self.list_items.push(item_id.clone());
+                            self.item_nodes.insert(item_id, NodeRef::default());
+                        }
+                    }
+                }
+                self.init_callback = vec![];
+            },
+            GroceryBagMsg::UpdateStorage(item_id) => {
+                if self.item_nodes.contains_key(&item_id) {
+                    let node = &self.item_nodes[&item_id];
+                    let value = node.cast::<HtmlInputElement>().unwrap().value();
+                    self.storage.insert(item_id.to_string(), value);
+                    let _ = LocalStorage::set("grocery_bag", self.storage.clone());
+                } else if self.general_nodes.contains_key(&item_id) {
+                    let node = &self.general_nodes[&item_id];
+                    let value = node.cast::<HtmlSelectElement>().unwrap().selected_index().to_string();
+                    self.storage.insert(item_id.to_string(), value);
+                    let _ = LocalStorage::set("grocery_bag", self.storage.clone());
+                }
+                return false;
+            },
             GroceryBagMsg::AddItem(item_id) => {
                 let item = &inventory.item_id_map[&item_id];
                 if item.track_general {
@@ -43,6 +105,8 @@ impl Component for GroceryBag {
                         self.item_nodes.insert(item_id, NodeRef::default());
                     }
                 }
+                self.storage.insert(item.id.clone(), "".to_string());
+                let _ = LocalStorage::set("grocery_bag", self.storage.clone());
             },
             GroceryBagMsg::Submit => {
                 if self.item_nodes.len() == 0 && self.general_nodes.len() == 0 {
@@ -79,6 +143,8 @@ impl Component for GroceryBag {
                 self.list_items = vec![];
                 self.item_nodes = BTreeMap::new();
                 self.general_nodes = BTreeMap::new();
+                self.storage = BTreeMap::new();
+                LocalStorage::delete("grocery_bag");
                 if items.len() > 0 {
                     controller.restock_items(items);
                 }
@@ -98,26 +164,37 @@ impl Component for GroceryBag {
             let item = &id_map[item_id];
             let item_name = &item.name;
             if item.track_general {
-                let mut general_options: Vec<Html> = vec![html!(<option value="none" id="none">{"No Change"}</option>)];
+                let stored = if self.storage.contains_key(&item_id.to_string()) {
+                    self.storage[&item_id.to_string()].clone()
+                } else {
+                    "-1".to_string()
+                };
+                let mut general_options: Vec<Html> = vec![html!(<option value="none" id="none" selected={stored.eq("0")}>{"No Change"}</option>)];
                 if item.stock < 1 {
-                    general_options.push(html!(<option value="low" id="low">{"Low"}</option>));
+                    general_options.push(html!(<option value="low" id="low" selected={stored.eq("1")}>{"Low"}</option>));
                 }
                 if item.stock < 2 {
-                    general_options.push(html!(<option value="out" id="out">{"Good"}</option>));
+                    general_options.push(html!(<option value="out" id="out" selected={stored.eq("2")}>{"Good"}</option>));
                 }
+                let item_id = item_id.clone();
                 item_list.push(html!(<tr key={item_id.to_string()}>
                     <td class="name">{item_name}</td>
                     <td class="stock">
-                        <select name={item_id.to_string()} id={item_id.to_string()} ref={&self.general_nodes[item_id]}>
+                        <select name={item_id.to_string()} id={item_id.to_string()} ref={&self.general_nodes[&item_id]} onchange={ctx.link().callback(move |_| GroceryBagMsg::UpdateStorage(item_id.clone()))}>
                             {for general_options}
                         </select>
                     </td>
                 </tr>))
             } else {
+                let value = match self.storage.contains_key(&item_id.to_string()) {
+                    true => Some(self.storage[&item_id.to_string()].clone()),
+                    false => None,
+                };
+                let item_id = item_id.clone();
                 item_list.push(html!(<tr key={item_id.to_string()}>
                     <td class="name">{item_name}</td>
                     <td class="stock">
-                        <input type="number" size="5" min="1" placeholder="1" ref={self.item_nodes.get(item_id).unwrap()} />
+                        <input type="number" size="5" min="1" placeholder="1" ref={self.item_nodes.get(&item_id).unwrap()} value={value} onchange={ctx.link().callback(move |_| GroceryBagMsg::UpdateStorage(item_id.clone()))} />
                     </td>
                 </tr>));
             }

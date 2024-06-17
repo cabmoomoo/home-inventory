@@ -1,6 +1,6 @@
 [serve]
 # The address to serve on.
 #address = "192.168.1.229"
-address = "192.168.1.11"
+#address = "192.168.1.11"
 # The port to serve on.
 port = 26531

@@ -53,6 +53,9 @@ impl Component for ItemSearch {
                 self.search_value = None;
             },
             ItemSearchMsg::SelectFirst => {
+                if self.filtered_items.len() < 1 {
+                    return false
+                }
                 let (_item_name, item_id) = &self.filtered_items[0];
                 props.selection_callback.emit(item_id.clone());
                 let node = self.search_node.cast::<HtmlInputElement>().unwrap();

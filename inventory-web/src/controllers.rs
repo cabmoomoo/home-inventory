@@ -1,3 +1,4 @@
+use log::info;
 use yew::{Callback, UseReducerHandle};
 
 use crate::{error_message, items_api, models::{Item, RestockItem}, state::{ItemAction, ItemsState}, success_message, MessageContainer, MessageContainerAction};
@@ -38,7 +39,8 @@ impl InventoryController {
                         ])
                     });
                 },
-            }
+            };
+            info!("Init completed");
         });
         // self.message.clone().dispatch(MessageContainerAction::Change { 
         //     name: "Test Message".into(),

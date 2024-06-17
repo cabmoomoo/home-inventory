@@ -27,12 +27,23 @@ body {
     color: #333;
     font-family: sans-serif;
     font-size: 200%;
+    margin: 1%;
 }
 
 /* tabs */
 div.tabs {
     overflow: hidden;
     display: flex;
+    
+    /* make sticky */
+    background: var(--light);
+    position: fixed;
+    width: 98%;
+    top: 0;
+    left: 0;
+    padding-top: 1%;
+    padding-left: 1%;
+    padding-right: 1%;
 }
 
 div.tabs button.tab_button {
@@ -67,6 +78,7 @@ div.tabs button:focus {
 div.tab {
     display: none; /* First change from original! */
     padding: 1em;
+    padding-top: 3em;
     background-color: var(--main);
 }
 div.tab.active {
@@ -130,8 +142,10 @@ div.item-stock-tab {
     display: grid;
 }
 .item-search {
-    position: relative;
-    display: inline;
+    position: fixed;
+    width: 75%;
+    top: 2.5em;
+    left: 12.5%;
 }
 .search-items {
     z-index: 20;
