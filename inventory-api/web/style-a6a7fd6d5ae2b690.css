@@ -1,0 +1,251 @@
+:root {
+    /* main background, dropdown backgrounds */
+    --dark: #171717;
+    /* tooltip background; should be same as dark, but with alpha channel */
+    --dark-overlay: rgba(23, 23, 23, 0.8);
+    /* visualization node backgrounds, button backgrounds */
+    --medium: #333;
+    /* background of main visual area */
+    --main: #fff;
+    /* input field backgrounds, collapsed dropdown borders */
+    --light: #9b9b9b;
+
+    /* main foreground text color */
+    --foreground: #c8c8c8;
+    /* makes things stand out */
+    --accent: #ffa65d;
+    /* slightly brighter than main foreground color */
+    --bright: #f1fff2;
+
+    /* stock warning colors */
+    --stock-critical: #fd5858;
+    --stock-low: #e7de60;
+}
+
+body {
+    background: var(--light);
+    color: #333;
+    font-family: sans-serif;
+    font-size: 200%;
+    margin: 1%;
+}
+
+/* tabs */
+div.tabs {
+    overflow: hidden;
+    display: flex;
+    
+    /* make sticky */
+    background: var(--light);
+    position: fixed;
+    width: 98%;
+    top: 0;
+    left: 0;
+    padding-top: 1%;
+    padding-left: 1%;
+    padding-right: 1%;
+}
+
+div.tabs button.tab_button {
+    color: var(--accent);
+    background-color: inherit;
+    border-top-left-radius: 0.25em;
+    border-top-right-radius: 0.25em;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    /* padding: auto; */
+    padding: 0.5em;
+    flex: 1;
+    font-weight: bold;
+    font-size: large;
+}
+
+div.tabs button.tab_button:hover {
+    background-color: var(--medium)
+}
+
+div.tabs button.active, div.tabs button.active:hover {
+    color: var(--dark);
+    background-color: var(--main);
+}
+
+div.tabs button:focus {
+    border: 0.2em dashed var(--accent);
+}
+
+div.tab {
+    display: none; /* First change from original! */
+    padding: 1em;
+    padding-top: 3em;
+    background-color: var(--main);
+}
+div.tab.active {
+    display: block;
+}
+
+/* home */
+#item-list {
+    width: 100%;
+    display: inline-table;
+}
+
+td.category {
+    border: 1px solid var(--light);
+    /* border-color: var(--light); */
+    min-width: 33%;
+    max-width: 33%;
+    vertical-align: top;
+}
+
+td.category h3 {
+    margin: 0;
+}
+
+table.item-table {
+    width: 100%;
+}
+table.item-table td {
+    border-bottom: 1px solid var(--light);
+}
+td.name {
+    width: auto;
+}
+td.stock {
+    text-align: right;
+}
+td.track-general {
+    text-align: center;
+    width: 10ch;
+}
+td.stock, td.desired-stock{
+    width: 5ch;
+}
+
+tr.stock-critical {
+    background-color: var(--stock-critical);
+}
+tr.stock-low {
+    background-color: var(--stock-low);
+}
+
+/* dinner list */
+div.item-stock-tab {
+    display: block;
+    /* vertical-align: middle; */
+}
+.container {
+    width: 75%;
+    max-width: 800px;
+    margin: 25px auto 0 auto;
+    display: grid;
+}
+.item-search {
+    position: fixed;
+    width: 75%;
+    top: 2.5em;
+    left: 12.5%;
+}
+.search-items {
+    z-index: 20;
+    position: absolute;
+    width: 100%;
+}
+.search-item {
+    cursor: pointer;
+}
+.search-item p {
+    font-size: 1em;
+    border: 0.5px solid var(--light);
+    background-color: var(--main);
+    margin: 0;
+}
+.search {
+    height: 3em;
+    width: 100%;
+    padding: auto;
+}
+.item-stock-tab button {
+    height: 3em;
+    margin-top: 3em;
+}
+
+/* Development tab */
+div.dev {
+    position: fixed;
+    right: 2px;
+    bottom: 2px;
+}
+
+/* Message Box */
+div.msg-box.hidden {
+    display: none;
+}
+
+div.msg-box {
+    display: block;
+    border: 5px solid var(--dark);
+    width: max-content;
+    max-width: 75%;
+    /* height: max-content; */
+    max-height: 75%;
+    background-color: var(--main);
+    font-size: medium;
+    padding: 0.5em;
+    overflow-y: scroll;
+
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+div.msg-options {
+    display: grid;
+    width: 100%;
+}
+div.msg-options button {
+    height: 3em;
+}
+
+div.msg-time {
+    position: absolute;
+    font-size: small;
+    color: var(--light);
+    right: 2px;
+    top: 2px;
+}
+
+/* Button focus */
+button:focus {
+    border: 0.4em dashed var(--accent)
+}
+
+/* Logs */
+div.logs {
+    position: fixed;
+    left: 2px;
+    bottom: 2px;
+}
+div.logs button {
+    height: 3em;
+    width: auto;
+}
+
+#logs-tab h3 {
+    margin: 0;
+}
+#logs-tab button {
+    height: 3em;
+}
+.log-container table{
+    width: 100%;
+}
+.log-container td {
+    white-space: pre-wrap;
+    border: 1px solid var(--light);
+}
+.log-container .date {
+    width: 20%;
+}

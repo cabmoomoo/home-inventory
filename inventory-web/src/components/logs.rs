@@ -1,17 +1,17 @@
-use chrono::{DateTime, Datelike, Local};
-use log::info;
+use chrono::Local;
 use yew::prelude::*;
 
-use crate::{items_api, InvCont};
+use crate::{items_api, models::LogItem, InvCont};
 
-pub struct LogItem {
-    pub time: DateTime<Local>,
-    pub level: AttrValue,
-    pub msg: AttrValue
-}
+// #[derive(Deserialize)]
+// pub struct LogItem {
+//     pub date: DateTime<Local>,
+//     pub level: String,
+//     pub message: String
+// }
 
 pub enum LogTabMsg {
-    LoadLogs((String, String))
+    LoadLogs(String)
 }
 
 pub struct LogTab {
@@ -28,16 +28,33 @@ impl Component for LogTab {
         Self { current: vec![], yesterday: vec![] }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, message: Self::Message) -> bool {
         let (controller, _) = ctx.link().context::<InvCont>(Callback::noop()).expect("no ctx found");
 
-        match msg {
-            LogTabMsg::LoadLogs((current, yesterday)) => {
-                info!("{}, {}", current, yesterday);
-                self.current = parse_log(current, controller.clone());
-                self.current.sort_by(|a, b| b.time.cmp(&a.time));
-                self.yesterday = parse_log(yesterday, controller.clone());
-                self.yesterday.sort_by(|a, b| b.time.cmp(&a.time));
+        match message {
+            LogTabMsg::LoadLogs(current) => {
+                let mut logs = parse_json_log(current, controller.clone());
+                logs.sort_by(|a, b| b.date.unwrap().cmp(&a.date.unwrap()));
+
+                let todays_date = Local::now().date_naive();
+                let yesterdays_date = todays_date.checked_sub_days(chrono::Days::new(1)).unwrap();
+                let mut current = vec![];
+                let mut yesterday = vec![];
+
+                for item in logs {
+                    let item_date = item.date.unwrap().date_naive();
+                    if item_date.lt(&yesterdays_date) {
+                        break;
+                    }
+                    if item_date.eq(&todays_date) {
+                        current.push(item);
+                    } else if item_date.eq(&yesterdays_date) {
+                        yesterday.push(item);
+                    }
+                }
+
+                self.current = current;
+                self.yesterday = yesterday;
             },
         }
         true
@@ -48,15 +65,15 @@ impl Component for LogTab {
         let mut current_logs: Vec<Html> = vec![];
         for log_item in self.current.iter() {
             current_logs.push(html!(<tr>
-                <td class="time">{log_item.time.format("%r").to_string()}</td>
-                <td>{log_item.msg.clone()}</td>
+                <td class="date">{log_item.date.clone().unwrap().format("%r").to_string()}</td>
+                <td>{log_item.label.clone() + &log_item.message}</td>
             </tr>))
         }
         let mut yesterday_logs: Vec<Html> = vec![];
         for log_item in self.yesterday.iter() {
             yesterday_logs.push(html!(<tr>
-                <td class="time">{log_item.time.format("%r").to_string()}</td>
-                <td>{log_item.msg.clone()}</td>
+                <td class="date">{log_item.date.clone().unwrap().format("%r").to_string()}</td>
+                <td>{log_item.label.clone() + &log_item.message}</td>
             </tr>))
         }
 
@@ -76,50 +93,40 @@ impl Component for LogTab {
     }
 }
 
-fn parse_log(log: String, inv_cont: InvCont) -> Vec<LogItem> {
+fn parse_json_log(log: String, inv_cont: InvCont) -> Vec<LogItem> {
     if log.is_empty() {
         return vec![];
     }
-    let year = Local::now().year().to_string();
-    let mut log_items: Vec<LogItem> = vec![];
-    let search_value = "\n".to_owned() + &year;
-    let mut log = log;
 
-    loop {
-        let i = log.rfind(&search_value);
-        match i {
-            None => break,
-            Some(i) => {
-                let item = log.split_off(i+1);
-                log_items.push(parse_log_line(item, inv_cont.clone()));
-                log.pop();
-            }
-        }
-    }
-    log_items.push(parse_log_line(log, inv_cont));
-    log_items
-}
-
-fn parse_log_line(item: String, inv_cont: InvCont) -> LogItem {
-    let time_zone = Local::now().offset().to_string();
     let id_map = &inv_cont.state.inventory.item_id_map;
 
-    let mut item_iter = item.split(" | ").into_iter();
-    let time = DateTime::parse_from_str(&(item_iter.next().unwrap().to_owned() + " " + &time_zone), "%Y-%m-%d %H:%M:%S %z").unwrap().into();
-    let level = AttrValue::from(item_iter.next().unwrap().to_string());
-    let mut msg = item_iter.next().unwrap().to_string();
-    if msg.contains("Consumed:") || msg.contains("Restocked") {
-        loop {
-            let i = msg.find("items:");
-            match i {
-                None => break,
-                Some(i) => {
-                    let item_id: String = msg.drain(i..i+26).collect();
-                    let item = id_map.get(&AttrValue::from(item_id)).unwrap();
-                    msg.insert_str(i, &item.name);
+    let mut log = log;
+    log.insert(0, '['); // Start the list
+    log.pop(); // Pop newline
+    log.pop(); // Pop trailing comma
+    log.push(']'); // End the list
+    let mut log_items: Vec<LogItem> = serde_json::from_str(&log).unwrap();
+
+    for item in log_items.iter_mut() {
+        if item.label.contains("Consumed") || item.label.contains("Restocked") || item.label.contains("Updated") {
+            loop {
+                let i = item.message.find("items:");
+                match i {
+                    None => break,
+                    Some(i) => {
+                        let mut item_id: String = item.message.drain(i..i+26).collect();
+                        let inv_item_fetch = id_map.get(&AttrValue::from(item_id.clone()));
+                        match inv_item_fetch {
+                            Some(inv_item) => item.message.insert_str(i, &inv_item.name),
+                            None => {
+                                item_id.replace_range(4..5, "_id");
+                                item.message.insert_str(i, &item_id);
+                            },
+                        }
+                    }
                 }
             }
         }
     }
-    LogItem { time, level, msg: AttrValue::from(msg) }
+    log_items
 }

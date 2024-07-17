@@ -24,7 +24,7 @@ impl fmt::Display for Categories {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Item {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -38,28 +38,15 @@ pub struct Item {
     pub last_updated: Option<DateTime<Utc>>
 } impl std::fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "\tid: {}", &self.id.clone().unwrap_or("None".to_string()))?;
-        writeln!(f, "\tname: {}", &self.name)?;
-        writeln!(f, "\tcategory: {}", &self.category)?;
-        writeln!(f, "\tstock {}", &self.stock)?;
-        writeln!(f, "\tdesired_stock: {}", &self.desired_stock)?;
-        writeln!(f, "\ttrack_general: {}", &self.track_general.unwrap_or(false))?;
-        write!(f, "\tlast_updated: {}", &self.last_updated.unwrap())
+        write!(f, "\\n\\tid: {}", &self.id.clone().unwrap_or("None".to_string()))?;
+        write!(f, "\\n\\tname: {}", &self.name)?;
+        write!(f, "\\n\\tcategory: {}", &self.category)?;
+        write!(f, "\\n\\tstock {}", &self.stock)?;
+        write!(f, "\\n\\tdesired_stock: {}", &self.desired_stock)?;
+        write!(f, "\\n\\ttrack_general: {}", &self.track_general.unwrap_or(false))?;
+        write!(f, "\\n\\tlast_updated: {}", &self.last_updated.unwrap())
     }
 }
-
-// impl From<W<Object>> for Item {
-//     fn from(obj: W<Object>) -> Self {
-//         let map = obj.0;
-//         Self { id: Some(map["id"].to_string()), 
-//             name: map["name"].to_string(), 
-//             category: map["category"].to_string(), 
-//             stock: map["stock"].clone().try_into().expect("value wasn't a number"), 
-//             desired_stock: map["desired_stock"].clone().try_into().expect("value wasn't a number"), 
-//             last_updated: Some(map["last_updated"].clone().try_into().expect("value wasn't a datetime"))
-//         }
-//     }
-// }
 
 impl TryFrom<W<Object>> for Item {
     type Error = Error;
@@ -85,24 +72,6 @@ impl TryFrom<W<Value>> for Item {
         }
     }
 }
- /* 
-impl From<Item> for Value {
-    fn from(val: Item) -> Self {
-        map!(
-            "id".into() => val.id.into(),
-            "name".into() => val.name.into(),
-            "category".into() => val.category.into(),
-            "stock".into() => val.stock.into(),
-            "desired_stock".into() => val.desired_stock.into(),
-        )
-        .into()
-    }
-}
-
-impl Creatable for Item {}
-
-pub trait Creatable: Into<Value> {}
-*/
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AffectedRows {
@@ -136,17 +105,6 @@ impl DB {
         let first_res = res.into_iter().next().expect("Did not get a response");
 
         W(first_res.result?.first()).try_into()
-    }
-
-    pub async fn set_desired_stock(&self, id: &str, desired_stock: i64) -> Result<AffectedRows, crate::error::Error> {
-        let sql = "UPDATE $th SET desired_stock = $desired_stock;";
-        let tid = format!("{}", id);
-        let vars: BTreeMap<String, Value> = map!(
-            "th".into() => thing(&tid)?.into(),
-            "desired_stock".into() => Value::Number(desired_stock.into())
-        );
-        let _ = self.execute(sql, Some(vars)).await?;
-        Ok(AffectedRows { rows_affected: 1 })
     }
 
     pub async fn add_full_item(&self, name: &str, category: &str, stock: i64, desired_stock: i64, track_general: bool) -> Result<Item, crate::error::Error> {
@@ -186,40 +144,6 @@ impl DB {
         let array: Array = W(first_res.result?).try_into()?;
 
         array.into_iter().map(|value| W(value).try_into()).collect()
-
-        // let temp: Vec<_> = array.into_iter().map(|value| <W<surrealdb::sql::Value> as TryInto<Object>>::try_into(W(value))).collect::<Vec<_>>();
-
-        // temp.into_iter().map(|value| W(value).try_into()).collect()
-        // todo!()
-    }
-
-    pub async fn restock_item(&self, id: &str, stock: i64) -> Result<AffectedRows, crate::error::Error> {
-        let sql = "UPDATE $th SET stock += $stock, last_updated = time::now();";
-        let tid = format!("{}", id);
-        let vars: BTreeMap<String, Value> = map!(
-            "th".into() => thing(&tid)?.into(),
-            "stock".into() => Value::Number(stock.into())
-        );
-        let _ = self.execute(sql, Some(vars)).await?;
-        Ok(AffectedRows { rows_affected: 1 })
-
-        // let first_res = res.into_iter().next().expect("Did not get a response");
-
-        // let array1: Array = W(first_res.result?).try_into()?;
-        // let array2: Array = W(array1.0.into_iter().next().unwrap()).try_into()?;
-
-        // array2.0.into_iter().map(|value| W(value).try_into()).collect()
-    }
-
-    pub async fn consume_item(&self, id: &str, stock: i64) -> Result<AffectedRows, crate::error::Error> {
-        let sql = "UPDATE $th SET stock -= $stock, last_updated = time::now();";
-        let tid = format!("{}", id);
-        let vars: BTreeMap<String, Value> = map!(
-            "th".into() => thing(&tid)?.into(),
-            "stock".into() => Value::Number(stock.into())
-        );
-        let _ = self.execute(sql, Some(vars)).await?;
-        Ok(AffectedRows { rows_affected: 1 })
     }
 
     pub async fn restock_items(&self, data: Vec<crate::RestockItem>) -> Result<AffectedRows, crate::error::Error> {

@@ -2,12 +2,8 @@ use reqwasm::{http::Request, Error};
 
 use crate::models::*;
 
-const BASE_URL: &str = "http://192.168.1.229:26530";
-// const BASE_URL: &str = "http://192.168.1.11:26530";
-// const BASE_URL: &str = "http://127.0.0.1:26530";
-
 pub async fn fetch_items() -> Result<Vec<Item>, Error> {
-    Request::get(&format!("{BASE_URL}/items"))
+    Request::get(&format!("/items"))
         .send()
         .await?
         .json()
@@ -15,9 +11,8 @@ pub async fn fetch_items() -> Result<Vec<Item>, Error> {
 }
 
 pub async fn new_item(name: &str, category: &str) -> Result<Item, Error> {
-    Request::post(&format!("{BASE_URL}/item"))
+    Request::post(&format!("/item"))
         .body(format!("[\"{name}\", \"{category}\"]"))
-        // .body(vec![name, category])
         .header("Content-Type", "application/json")
         .send()
         .await?
@@ -26,7 +21,7 @@ pub async fn new_item(name: &str, category: &str) -> Result<Item, Error> {
 }
 
 pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock: i64, track_generally: bool) -> Result<Item, Error> {
-    Request::post(&format!("{BASE_URL}/dev/item/{name}"))
+    Request::post(&format!("/dev/item/{name}"))
         .body(format!("[\"{category}\", \"{track_generally}\", \"{stock}\", \"{desired_stock}\"]"))
         .header("Content-Type", "application/json")
         .send()
@@ -36,7 +31,7 @@ pub async fn add_full_item(name: &str, category: &str, stock: i64, desired_stock
 }
 
 pub async fn change_item(id: &str, item: Item) -> Result<Item, Error> {
-    Request::patch(&format!("{BASE_URL}/item/update/{id}"))
+    Request::patch(&format!("/item/update/{id}"))
         .body(item.to_json())
         .header("Content-Type", "application/json")
         .send()
@@ -46,7 +41,7 @@ pub async fn change_item(id: &str, item: Item) -> Result<Item, Error> {
 }
 
 pub async fn change_items(items: Vec<Item>) -> Result<AffectedRows, Error> {
-    Request::patch(&format!("{BASE_URL}/items/update"))
+    Request::patch(&format!("/items/update"))
         .body(serde_json::to_string(&items).unwrap())
         .header("Content-Type", "application/json")
         .send()
@@ -56,7 +51,7 @@ pub async fn change_items(items: Vec<Item>) -> Result<AffectedRows, Error> {
 }
 
 pub async fn delete_item(id: &str) -> Result<AffectedRows, Error> {
-    Request::delete(&format!("{BASE_URL}/item/{id}"))
+    Request::delete(&format!("/item/{id}"))
         .send()
         .await?
         .json()
@@ -64,7 +59,7 @@ pub async fn delete_item(id: &str) -> Result<AffectedRows, Error> {
 }
 
 pub async fn restock_items(items: Vec<RestockItem>) -> Result<AffectedRows, Error> {
-    Request::patch(&format!("{BASE_URL}/items/restock"))
+    Request::patch(&format!("/items/restock"))
         .body(restock_items_to_json(items))
         .header("Content-Type", "application/json")
         .send()
@@ -74,7 +69,7 @@ pub async fn restock_items(items: Vec<RestockItem>) -> Result<AffectedRows, Erro
 }
 
 pub async fn consume_items(items: Vec<RestockItem>) -> Result<AffectedRows, Error> {
-    Request::patch(&format!("{BASE_URL}/items/consume"))
+    Request::patch(&format!("/items/consume"))
         .body(restock_items_to_json(items))
         .header("Content-Type", "application/json")
         .send()
@@ -83,21 +78,20 @@ pub async fn consume_items(items: Vec<RestockItem>) -> Result<AffectedRows, Erro
         .await
 }
 
-// pub async fn test_request() -> Result<String, Error> {
-//     Request::get(&format!("{BASE_URL}/items"))
-//         .send()
-//         .await
-//         .unwrap()
-//         .text()
-//         .await
-// }
-
-pub async fn fetch_logs() -> Result<(String, String), Error> {
-    Request::get(&format!("{BASE_URL}/logs"))
+pub async fn fetch_logs() -> Result<String, Error> {
+    let running = Request::get("/logs/running.log")
         .send()
         .await?
-        .json()
-        .await
+        .text()
+        .await;
+    let old1 = Request::get("/logs/old1.log")
+        .send()
+        .await?;
+    if !old1.ok() {
+        return running;
+    } else {
+        return Ok(running.unwrap() + &old1.text().await.unwrap());
+    }
 }
 
 fn restock_items_to_json(items: Vec<RestockItem>) -> String {

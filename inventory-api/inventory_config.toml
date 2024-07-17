@@ -1,0 +1,24 @@
+# [server]
+# This is the IP and port the server will be hosted on
+# Defaults to localhost and 26530 if not supplied
+address = "192.168.1.11"
+port = "26531"
+
+# [database]
+# Where your database will be stored
+# File-backed databases need to be prepended with "file://"
+# File-backed paths can be relative or absolute
+# The option "memory" will store the database only in application memory - it will be deleted when the app is closed
+# Defaults to the first example: a folder created directly in the working directory
+#storage_path = "file://inventory.db"
+#storage_path = "file:///usr/local/inventory.db"
+#storage_path = "memory"
+
+# [logging]
+# Where your logs will be stored
+# general_path is for the standard program logs
+# inventory_path is specifically for changes to the data
+# Paths can be relative to working directory or absolute
+# No defaults are supplied - you *must* ensure this path is set
+log_inventory_path = "log"
+log_general_path = "log/general"

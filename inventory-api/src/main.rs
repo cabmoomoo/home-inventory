@@ -1,14 +1,16 @@
 #[macro_use]
 extern crate rocket;
 
-use std::{env, io::ErrorKind, sync::Arc};
+use std::{collections::HashMap, env, io::ErrorKind, sync::Arc};
 
+use config::Config;
 use cors::CORS;
 use db::{AffectedRows, Item, DB};
-use rocket::{serde::json::Json, State};
+use logging::*;
+use rocket::{fs::{relative, FileServer, Options}, serde::json::Json, State};
 use serde::{Deserialize, Serialize};
 use surrealdb::{dbs::Session, kvs::Datastore};
-use log::{self, info, warn};
+use log::Level;
 use log4rs;
 
 mod db;
@@ -27,19 +29,9 @@ async fn add_item(data: Json<Vec<String>>, db: &State<DB>) -> Result<Json<Item>,
         .await
         .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
 
-    info!(target: "database", "Created new item:\n{}", item);
+    log_database(LogItem { date: None, level: Level::Info, label: "Created new item:", message: &item.to_string() });
 
     Ok(Json(item))
-}
-
-#[patch("/item/<id>/desired/<desired_stock>")]
-async fn set_desired_stock(id: &str, desired_stock: i64, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
-    let result = db
-        .set_desired_stock(id, desired_stock)
-        .await
-        .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
-
-    Ok(Json(result))
 }
 
 #[post("/dev/item/<name>", format="json", data="<data>")]
@@ -67,7 +59,7 @@ async fn add_full_item(name: &str, data: Json<Vec<String>>, db: &State<DB>) -> R
         .await
         .map_err(|_| std::io::Error::new(ErrorKind::Other, "Unable to create item."))?;
 
-    info!(target: "database", "Created new item:\n{}", item);
+    log_database(LogItem { date: None, level: Level::Info, label: "Created new item:", message: &item.to_string() });
 
     Ok(Json(item))
 }
@@ -92,26 +84,6 @@ async fn get_all_items(db: &State<DB>) -> Result<Json<Vec<Item>>, std::io::Error
     Ok(Json(items))
 }
 
-#[patch("/item/<id>/<stock>")]
-async fn restock_item(id: &str, stock: i64, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
-    let result = db
-        .restock_item(id, stock)
-        .await
-        .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
-
-    Ok(Json(result))
-}
-
-#[patch("/item/<id>/consume/<stock>")]
-async fn consume_item(id: &str, stock: i64, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
-    let result = db
-        .consume_item(id, stock)
-        .await
-        .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
-
-    Ok(Json(result))
-}
-
 #[patch("/item/update/<id>", format="json", data="<data>", rank=1)]
 async fn change_item(id: &str, data: Json<Item>, db: &State<DB>) -> Result<Json<Item>, std::io::Error> {
     let result = db
@@ -119,7 +91,7 @@ async fn change_item(id: &str, data: Json<Item>, db: &State<DB>) -> Result<Json<
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
-    info!(target: "database", "Changed item:\n{}", result);
+    log_database(LogItem { date: None, level: Level::Info, label: "Changed item:", message: &result.to_string() });
 
     Ok(Json(result))
 }
@@ -127,9 +99,11 @@ async fn change_item(id: &str, data: Json<Item>, db: &State<DB>) -> Result<Json<
 #[patch("/items/update", format="json", data="<data>")]
 async fn change_items(data: Json<Vec<Item>>, db: &State<DB>) -> Result<Json<AffectedRows>, std::io::Error> {
     let result = db
-        .change_items(data.0)
+        .change_items(data.0.clone())
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
+    
+    log_database(LogItem { date: None, level: Level::Info, label: "Updated items:", message: &log_reinventory(data.0) });
 
     Ok(Json(result))
 }
@@ -141,7 +115,7 @@ async fn delete_item(id: &str, db: &State<DB>) -> Result<Json<AffectedRows>, std
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
-    warn!(target: "database", "Deleted: {}", id);
+    log_database(LogItem{date:None, level: Level::Warn, label: "Deleted: ", message: id });
 
     Ok(Json(result))
 }
@@ -174,7 +148,7 @@ async fn restock_items(data: Json<Vec<RestockItem>>, db: &State<DB>) -> Result<J
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
-    info!(target: "database", "Restocked:\n{}", logging::log_vec(data));
+    log_database(LogItem { date: None, level: Level::Info, label: "Restocked:", message: &log_vec(data) });
 
     Ok(Json(result))
 }
@@ -187,24 +161,26 @@ async fn consume_items(data: Json<Vec<RestockItem>>, db: &State<DB>) -> Result<J
         .await
         .map_err(|e| std::io::Error::new(ErrorKind::Other, e.to_string()))?;
 
-    info!(target: "database", "Consumed:\n{}", logging::log_vec(data));
+    log_database(LogItem { date: None, level: Level::Info, label: "Consumed:", message: &log_vec(data) });
     
     Ok(Json(result))
 }
 
-#[get("/logs")]
-async fn present_logs() -> Result<Json<(String, String)>, std::io::Error> {
-    let running = std::fs::read_to_string("log/running.log").unwrap_or_default();
-    let yesterday = std::fs::read_to_string("log/old1.log").unwrap_or_default();
-    Ok(Json((running, yesterday)))
-}
-
 #[launch]
 async fn rocket() -> _ {
-    log4rs::init_file("logging_config.yaml", Default::default()).unwrap();
+    let mut config_init = Config::builder();
+    config_init = match env::var("settings_path") {
+        Ok(path) => config_init.add_source(config::File::with_name(&path)),
+        Err(_) => config_init.add_source(config::File::with_name("inventory_config")),
+    };
+    let settings: HashMap<String, String> = config_init.build().unwrap().try_deserialize::<HashMap<String, String>>().unwrap();
 
-    let ds = Arc::new(Datastore::new("file://inventory.db").await.unwrap());
-    // let ds = Arc::new(Datastore::new("memory").await.unwrap());
+    env::set_var("ROCKET_ADDRESS", settings.get("address").unwrap_or(&"127.0.0.1".to_owned()));
+    env::set_var("ROCKET_PORT", settings.get("port").unwrap_or(&"26530".to_owned()));
+
+    log4rs::init_config(logging::build_log_config(&settings)).unwrap();
+
+    let ds = Arc::new(Datastore::new(settings.get("storage_path").unwrap_or(&"file://inventory.db".to_owned())).await.unwrap());
     let mut sesh = Session::default();
 
     sesh.ns = Some("my_ns".to_owned());
@@ -212,24 +188,25 @@ async fn rocket() -> _ {
 
     let db = DB {ds, sesh};
 
-    env::set_var("ROCKET_ADDRESS", "192.168.1.229");
-    // env::set_var("ROCKET_ADDRESS", "192.168.1.11");
-    env::set_var("ROCKET_PORT", "26530");
-    // env::set_var("ROCKET_LOG_LEVEL", "off");
-
     rocket::build()
         .mount(
             "/",
-            routes![add_item, set_desired_stock,
+            routes![add_item,
                 add_full_item, 
                 get_item, get_all_items, 
-                restock_item, consume_item, 
                 restock_items, consume_items,
                 change_item, change_items,
                 delete_item,
                 // run_command,
-                present_logs
             ],
+        )
+        .mount(
+            "/",
+            FileServer::from(relative!("web"))
+        )
+        .mount(
+            "/logs",
+            FileServer::new(settings.get("log_inventory_path").unwrap(), Options::None).rank(11)
         )
         .attach(CORS)
         .manage(db)

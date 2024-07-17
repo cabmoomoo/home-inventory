@@ -168,7 +168,7 @@ div.item-stock-tab {
 }
 .item-stock-tab button {
     height: 3em;
-    margin-top: 1em;
+    margin-top: 3em;
 }
 
 /* Development tab */
@@ -246,6 +246,6 @@ div.logs button {
     white-space: pre-wrap;
     border: 1px solid var(--light);
 }
-.log-container .time {
+.log-container .date {
     width: 20%;
 }
