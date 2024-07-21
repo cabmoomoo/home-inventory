@@ -202,7 +202,7 @@ async fn rocket() -> _ {
         )
         .mount(
             "/",
-            FileServer::from(relative!("web"))
+            FileServer::from("web")
         )
         .mount(
             "/logs",

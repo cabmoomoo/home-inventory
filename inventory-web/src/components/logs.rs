@@ -102,7 +102,8 @@ fn parse_json_log(log: String, inv_cont: InvCont) -> Vec<LogItem> {
 
     let mut log = log;
     log.insert(0, '['); // Start the list
-    log.pop(); // Pop newline
+    log = log.trim_end().to_string(); // Trim newline
+    // log.pop(); // Pop newline
     log.pop(); // Pop trailing comma
     log.push(']'); // End the list
     let mut log_items: Vec<LogItem> = serde_json::from_str(&log).unwrap();
